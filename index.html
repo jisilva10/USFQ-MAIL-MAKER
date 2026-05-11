@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USFQ Email Builder</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        usfq: {
+                            red: '#e11b22',
+                            dark: '#1a1a1a',
+                            light: '#fef2f2'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Georgia', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .template-preview .image-container {
+            width: 100%;
+            height: 300px;
+            background-color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .template-preview .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 0.5rem;
+        }
+        @media (max-width: 640px) {
+            .template-preview .image-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen flex flex-col overflow-hidden">
+    <div id="root" class="h-full flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        const defaultHeroImage = 'https://via.placeholder.com/800x400.png?text=Hero+Image';
+        const defaultCardImage = 'https://via.placeholder.com/400x300.png?text=Arte';
+
+        const initialCards = Array(4).fill(null).map((_, i) => ({
+            id: i,
+            imagen: '',
+            linkGrande: '',
+            categoria: '',
+            titulo: '',
+            descripcion: '',
+            ctaTexto: 'Me Interesa',
+            ctaIcono: 'fas fa-info-circle',
+            ctaLink: ''
+        }));
+
+        function App() {
+            const [mes, setMes] = useState('MAYO 2026');
+            const [heroImage, setHeroImage] = useState('');
+            const [tarjetas, setTarjetas] = useState(initialCards);
+            const [activeAccordion, setActiveAccordion] = useState(0);
+            const [isMobilePreview, setIsMobilePreview] = useState(false);
+
+            const getEmoji = (iconClass) => {
+                if (!iconClass) return '👉';
+                if (iconClass.includes('whatsapp')) return '📱';
+                if (iconClass.includes('info')) return 'ℹ️';
+                if (iconClass.includes('edit')) return '✏️';
+                if (iconClass.includes('calendar')) return '📅';
+                if (iconClass.includes('link')) return '🔗';
+                return '👉';
+            };
+
+            // ImgBB Integration (Hardcoded API Key)
+            const IMGBB_API_KEY = '6d56fec57203671bd78ebae8f72b140c';
+            const [isUploadingHero, setIsUploadingHero] = useState(false);
+            const [uploadingCards, setUploadingCards] = useState({});
+
+            const uploadToImgBB = async (file, onSuccess, onStart, onEnd) => {
+                if (!file) return;
+
+                onStart();
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        onSuccess(data.data.url);
+                    } else {
+                        alert('Error al subir la imagen: ' + (data.error?.message || 'Revisa tu API Key.'));
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert('Error de conexión al subir la imagen.');
+                } finally {
+                    onEnd();
+                }
+            };
+
+            const updateTarjeta = (id, field, value) => {
+                setTarjetas(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
+            };
+
+            const removeTarjeta = (id) => {
+                if (tarjetas.length <= 1) {
+                    alert('Debe haber al menos una tarjeta en la plantilla.');
+                    return;
+                }
+                setTarjetas(tarjetas.filter(t => t.id !== id));
+            };
+
+            const addTarjeta = () => {
+                const newId = tarjetas.length > 0 ? Math.max(...tarjetas.map(t => t.id)) + 1 : 0;
+                setTarjetas([...tarjetas, {
+                    id: newId,
+                    imagen: '',
+                    linkGrande: '',
+                    categoria: '',
+                    titulo: '',
+                    descripcion: '',
+                    ctaTexto: 'Me Interesa',
+                    ctaIcono: 'fas fa-info-circle',
+                    ctaLink: ''
+                }]);
+                setActiveAccordion(newId);
+            };
+
+            const generateHTML = () => {
+
+                let tarjetasHTML = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 100%;"><tbody>';
+                for (let i = 0; i < tarjetas.length; i += 2) {
+                    const t1 = tarjetas[i];
+                    const t2 = tarjetas[i + 1];
+                    tarjetasHTML += '<tr class="mobile-stack">';
+                    
+                    tarjetasHTML += `
+                    <td ${t2 ? 'width="48%" class="card-stack"' : 'colspan="3" width="100%" class="card-stack"'} valign="top" align="center" style="padding-bottom: 30px;">
+                        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden" style="width: 100%; max-width: 350px; margin: 0 auto; text-align: left;">
+                            <a href="${t1.linkGrande || '#'}" target="_blank" class="block overflow-hidden" style="background-color: #f8fafc; text-align: center; border-bottom: 1px solid #e2e8f0; padding: 10px; display: block;">
+                                <img src="${t1.imagen || defaultCardImage}" alt="Arte" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
+                            </a>
+                            <div class="p-5" style="padding: 20px;">
+                                ${t1.categoria ? `<div class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t1.categoria}</div>` : ''}
+                                ${t1.titulo ? `<h4 class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t1.titulo}</h4>` : ''}
+                                ${t1.descripcion ? `<p class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t1.descripcion}</p>` : ''}
+                                
+                                <a href="${t1.ctaLink || '#'}" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
+                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t1.ctaIcono)}</span> ${t1.ctaTexto || 'Me Interesa'}
+                                </a>
+                            </div>
+                        </div>
+                    </td>`;
+
+                    if (t2) {
+                        tarjetasHTML += `<td width="4%" class="card-spacer" style="width: 4%;"></td>`;
+                        tarjetasHTML += `
+                    <td width="48%" class="card-stack" valign="top" align="center" style="padding-bottom: 30px;">
+                        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden" style="width: 100%; max-width: 350px; margin: 0 auto; text-align: left;">
+                            <a href="${t2.linkGrande || '#'}" target="_blank" class="block overflow-hidden" style="background-color: #f8fafc; text-align: center; border-bottom: 1px solid #e2e8f0; padding: 10px; display: block;">
+                                <img src="${t2.imagen || defaultCardImage}" alt="Arte" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
+                            </a>
+                            <div class="p-5" style="padding: 20px;">
+                                ${t2.categoria ? `<div class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t2.categoria}</div>` : ''}
+                                ${t2.titulo ? `<h4 class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t2.titulo}</h4>` : ''}
+                                ${t2.descripcion ? `<p class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t2.descripcion}</p>` : ''}
+                                
+                                <a href="${t2.ctaLink || '#'}" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
+                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t2.ctaIcono)}</span> ${t2.ctaTexto || 'Me Interesa'}
+                                </a>
+                            </div>
+                        </div>
+                    </td>`;
+                    }
+                    tarjetasHTML += '</tr>';
+                }
+                tarjetasHTML += '</tbody></table>';
+
+                return `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash News - Aliados VIP CE</title>
+    <style type="text/css">
+        @media only screen and (max-width: 600px) {
+            .mobile-stack { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
+            .mobile-pad { padding: 15px 20px !important; }
+            .mobile-pad-bottom { padding: 0 20px 20px 20px !important; }
+            .card-stack { display: block !important; width: 100% !important; padding-bottom: 20px !important; box-sizing: border-box !important; }
+            .card-spacer { display: none !important; }
+        }
+    </style>
+</head>
+<body style="background-color: #f3f4f6; margin: 0; padding: 32px 0; font-family: Georgia, serif; color: #1f2937;">
+
+    <!-- Main Wrapper -->
+    <table width="100%" align="center" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 768px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <tr>
+            <td>
+        <!-- HEADER -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #e11b22; color: #ffffff;">
+            <tr class="mobile-stack">
+                <td class="mobile-stack mobile-pad" style="padding: 24px 32px; text-align: left; box-sizing: border-box;" valign="middle">
+                    <h1 style="font-size: 24px; font-weight: bold; margin: 0; letter-spacing: 1px;">FLASH NEWS</h1>
+                    <p style="font-size: 14px; font-weight: bold; margin: 4px 0 0 0; letter-spacing: 2px; text-transform: uppercase;">Aliados VIP CE</p>
+                </td>
+                <td class="mobile-stack mobile-pad-bottom" style="padding: 24px 32px; text-align: right; box-sizing: border-box;" valign="middle">
+                    <span style="background-color: #ffffff; color: #e11b22; padding: 6px 16px; border-radius: 9999px; font-size: 14px; font-weight: bold; display: inline-block;">
+                        ${mes || 'MES Y AÑO'}
+                    </span>
+                </td>
+            </tr>
+        </table>
+
+        <!-- HERO SECTION -->
+        <div>
+            <img src="${heroImage || defaultHeroImage}" alt="Portada" width="768" border="0" style="width: 100%; max-width: 768px; height: auto; display: block; margin: 0 auto;">
+            <div class="bg-usfq-dark" style="background-color: #1a1a1a; padding: 32px; text-align: center; color: #ffffff;">
+                <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 8px; margin-top: 0;">¡Nuevas Oportunidades este Mes!</h2>
+                <p style="font-size: 14px; color: #e5e7eb; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto; margin-top: 0;">
+                    Descubre los beneficios y descuentos exclusivos diseñados especialmente para ti y tu equipo. Aprovecha al máximo tu membresía y comparte estas increíbles oportunidades.
+                </p>
+                <div style="text-align: center;">
+                    <a href="https://www.usfq.edu.ec/es/contacto/contacto-empresarial/beneficios-vip" target="_blank" class="bg-usfq-red" style="display: inline-block; background-color: #e11b22; color: #ffffff; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px;">
+                        <span style="margin-right: 8px; font-size: 16px;">🎁</span> Lista completa de beneficios
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding: 32px 32px 0 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fef2f2; border-left: 4px solid #e11b22; border-radius: 0 8px 8px 0;">
+                <tr>
+                    <td width="40" valign="top" style="padding: 20px 0 20px 20px; font-size: 24px; text-align: center;">
+                        💳
+                    </td>
+                    <td valign="top" style="padding: 20px 20px 20px 10px; font-size: 14px; color: #1a1a1a; line-height: 1.5;">
+                        <strong>Recuerda:</strong> Para acceder a cualquier beneficio, debes presentar tu credencial de la empresa junto con tu credencial digital de Aliado VIP CE.
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- TARJETAS -->
+        <div class="px-8 py-10" style="padding: 40px 32px;">
+            ${tarjetasHTML}
+        </div>
+
+        <!-- FOOTER -->
+        <div style="background-color: #1a1a1a; color: #9ca3af; padding: 32px; text-align: center; font-size: 14px;">
+            <h5 style="margin-top: 0; margin-bottom: 16px; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">Oficina de Contacto Empresarial</h5>
+            <p style="margin-top: 0; margin-bottom: 16px;">Este es un correo exclusivo para Aliados VIP CE.</p>
+            <div style="text-align: center;">
+                <a href="#" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">Facebook</a>
+                <a href="#" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">Instagram</a>
+                <a href="#" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">LinkedIn</a>
+            </div>
+        </div>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>`;
+            };
+
+            const exportHTML = () => {
+                const html = generateHTML();
+                navigator.clipboard.writeText(html).then(() => {
+                    alert('¡Código HTML copiado! El código es ligero y 100% compatible. Pégalo directamente en Mailchimp.');
+                }).catch(err => {
+                    console.error('Error al copiar', err);
+                    alert('Hubo un error al copiar el HTML.');
+                });
+            };
+
+            const downloadHTML = () => {
+                const html = generateHTML();
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'plantilla_usfq.html';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            return (
+                <div className="flex flex-col h-full">
+                    {/* Top Header */}
+                    <header className="bg-usfq-dark text-white p-4 flex justify-between items-center shadow-md z-10">
+                        <div className="flex items-center space-x-3">
+                            <i className="fas fa-envelope-open-text text-2xl text-usfq-red"></i>
+                            <h1 className="text-xl font-bold tracking-wide">USFQ Email Builder</h1>
+                        </div>
+                        <div className="flex space-x-3">
+                            <a href="https://login.mailchimp.com/" target="_blank" rel="noreferrer" className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-bold transition-colors flex items-center shadow-md">
+                                <i className="fas fa-mail-bulk mr-2"></i> Conectar a Mailchimp
+                            </a>
+                            <button onClick={downloadHTML} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors flex items-center">
+                                <i className="fas fa-download mr-2"></i> Descargar
+                            </button>
+                            <button onClick={exportHTML} className="px-4 py-2 bg-usfq-red hover:bg-red-700 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center">
+                                <i className="fas fa-copy mr-2"></i> Copiar HTML Listo
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Main Split Layout */}
+                    <div className="flex flex-1 overflow-hidden">
+                        
+                        {/* Left Column: Editor */}
+                        <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto p-6 custom-scrollbar">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6">Configuración</h2>
+                            
+
+                            {/* General Settings */}
+                            <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6">
+                                <h3 className="text-lg font-bold text-usfq-red mb-4 border-b border-gray-200 pb-2"><i className="fas fa-cog mr-2"></i> General</h3>
+                                
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Mes y Año</label>
+                                    <input 
+                                        type="text" 
+                                        value={mes} 
+                                        onChange={(e) => setMes(e.target.value)}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red"
+                                        placeholder="MAYO 2026"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Imagen de Portada (Hero)</label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={(e) => uploadToImgBB(e.target.files[0], setHeroImage, () => setIsUploadingHero(true), () => setIsUploadingHero(false))}
+                                        className="w-full p-2 border border-gray-300 rounded-md file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-usfq-red hover:file:bg-red-100"
+                                    />
+                                    {isUploadingHero && <p className="text-xs text-blue-600 mt-2"><i className="fas fa-spinner fa-spin mr-1"></i> Subiendo a la nube...</p>}
+                                    {heroImage && !isUploadingHero && <p className="text-xs text-green-600 mt-2"><i className="fas fa-check-circle mr-1"></i> ¡Imagen lista!</p>}
+                                    <div className="mt-2">
+                                        <input 
+                                            type="url" 
+                                            value={heroImage}
+                                            onChange={(e) => setHeroImage(e.target.value)}
+                                            className="w-full p-1.5 text-xs border border-gray-300 rounded-md bg-gray-50"
+                                            placeholder="URL Directa de la imagen (Autogenerado)"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Cards Settings */}
+                            <div className="mb-8">
+                                <h3 className="text-lg font-bold text-usfq-red mb-4 border-b border-gray-200 pb-2"><i className="fas fa-layer-group mr-2"></i> Tarjetas</h3>
+                                
+                                <div className="space-y-3">
+                                    {tarjetas.map((tarjeta, index) => (
+                                        <div key={tarjeta.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                                            <button 
+                                                className={`w-full px-5 py-4 flex justify-between items-center text-left transition-colors ${activeAccordion === index ? 'bg-usfq-light text-usfq-red' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}
+                                                onClick={() => setActiveAccordion(activeAccordion === index ? -1 : index)}
+                                            >
+                                                <span className="font-bold">Tarjeta {index + 1} {tarjeta.titulo ? `- ${tarjeta.titulo}` : ''}</span>
+                                                <i className={`fas fa-chevron-${activeAccordion === index ? 'up' : 'down'}`}></i>
+                                            </button>
+                                            
+                                            {activeAccordion === index && (
+                                                <div className="p-5 bg-white border-t border-gray-100 space-y-4">
+                                                    
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen de Tarjeta</label>
+                                                            <input 
+                                                                type="file" 
+                                                                accept="image/*"
+                                                                onChange={(e) => uploadToImgBB(
+                                                                    e.target.files[0], 
+                                                                    (url) => updateTarjeta(tarjeta.id, 'imagen', url),
+                                                                    () => setUploadingCards(prev => ({ ...prev, [tarjeta.id]: true })),
+                                                                    () => setUploadingCards(prev => ({ ...prev, [tarjeta.id]: false }))
+                                                                )}
+                                                                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                                                            />
+                                                            {uploadingCards[tarjeta.id] && <p className="text-xs text-blue-600 mt-2"><i className="fas fa-spinner fa-spin mr-1"></i> Subiendo a la nube...</p>}
+                                                            {tarjeta.imagen && !uploadingCards[tarjeta.id] && <p className="text-xs text-green-600 mt-2"><i className="fas fa-check-circle mr-1"></i> ¡Imagen lista!</p>}
+                                                            <div className="mt-2">
+                                                                <input 
+                                                                    type="url" 
+                                                                    value={tarjeta.imagen}
+                                                                    onChange={(e) => updateTarjeta(tarjeta.id, 'imagen', e.target.value)}
+                                                                    className="w-full p-1.5 text-xs border border-gray-300 rounded-md bg-gray-50"
+                                                                    placeholder="URL Directa de la imagen (Autogenerado)"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Link Imagen Grande (Pop-up)</label>
+                                                            <input 
+                                                                type="url" 
+                                                                value={tarjeta.linkGrande} 
+                                                                onChange={(e) => updateTarjeta(tarjeta.id, 'linkGrande', e.target.value)}
+                                                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red"
+                                                                placeholder="https://..."
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                                                            <input 
+                                                                type="text" 
+                                                                value={tarjeta.categoria} 
+                                                                onChange={(e) => updateTarjeta(tarjeta.id, 'categoria', e.target.value)}
+                                                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red"
+                                                                placeholder="Ej. Experiencia"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                                                            <input 
+                                                                type="text" 
+                                                                value={tarjeta.titulo} 
+                                                                onChange={(e) => updateTarjeta(tarjeta.id, 'titulo', e.target.value)}
+                                                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red"
+                                                                placeholder="Título de la tarjeta"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                                        <textarea 
+                                                            value={tarjeta.descripcion} 
+                                                            onChange={(e) => updateTarjeta(tarjeta.id, 'descripcion', e.target.value)}
+                                                            className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red h-20 resize-none"
+                                                            placeholder="Breve descripción..."
+                                                        ></textarea>
+                                                    </div>
+
+                                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                                        <p className="text-xs font-bold text-gray-500 uppercase mb-3">Botón CTA</p>
+                                                        <div className="grid grid-cols-3 gap-3">
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-700 mb-1">Texto</label>
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={tarjeta.ctaTexto} 
+                                                                    onChange={(e) => updateTarjeta(tarjeta.id, 'ctaTexto', e.target.value)}
+                                                                    className="w-full p-1.5 text-sm border border-gray-300 rounded-md"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-700 mb-1">Icono</label>
+                                                                <select 
+                                                                    value={tarjeta.ctaIcono} 
+                                                                    onChange={(e) => updateTarjeta(tarjeta.id, 'ctaIcono', e.target.value)}
+                                                                    className="w-full p-1.5 text-sm border border-gray-300 rounded-md"
+                                                                >
+                                                                    <option value="fab fa-whatsapp">WhatsApp</option>
+                                                                    <option value="fas fa-info-circle">Info</option>
+                                                                    <option value="fas fa-edit">Inscribir/Editar</option>
+                                                                    <option value="fas fa-calendar-alt">Calendario</option>
+                                                                    <option value="fas fa-link">Link</option>
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-700 mb-1">URL Link</label>
+                                                                <input 
+                                                                    type="url" 
+                                                                    value={tarjeta.ctaLink} 
+                                                                    onChange={(e) => updateTarjeta(tarjeta.id, 'ctaLink', e.target.value)}
+                                                                    className="w-full p-1.5 text-sm border border-gray-300 rounded-md"
+                                                                    placeholder="https://..."
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <button onClick={() => removeTarjeta(tarjeta.id)} className="w-full mt-4 text-red-500 hover:text-red-700 font-bold text-sm py-2 px-4 rounded border border-red-500 hover:bg-red-50 transition-colors">
+                                                        <i className="fas fa-trash-alt mr-2"></i> Eliminar Tarjeta
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={addTarjeta} className="mt-4 w-full py-3 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:border-usfq-red hover:text-usfq-red transition-colors flex items-center justify-center font-medium">
+                                    <i className="fas fa-plus mr-2"></i> Añadir Nueva Tarjeta
+                                </button>
+                            </div>
+
+                        </div>
+
+                        {/* Right Column: Preview */}
+                        <div className="w-1/2 bg-gray-200 overflow-y-auto p-8 relative template-preview">
+                            <div className="absolute top-4 right-6 flex space-x-0 z-20 shadow-sm rounded-lg overflow-hidden">
+                                <button onClick={() => setIsMobilePreview(false)} className={`px-4 py-2 text-xs font-bold transition-colors ${!isMobilePreview ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-300'}`}>
+                                    <i className="fas fa-desktop mr-1"></i> Desktop
+                                </button>
+                                <button onClick={() => setIsMobilePreview(true)} className={`px-4 py-2 text-xs font-bold transition-colors ${isMobilePreview ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border-y border-r border-gray-300'}`}>
+                                    <i className="fas fa-mobile-alt mr-1"></i> Mobile
+                                </button>
+                            </div>
+                            
+                            {/* Rendered Template */}
+                            <div style={{ maxWidth: isMobilePreview ? '375px' : '100%', margin: '0 auto', transition: 'max-width 0.3s ease' }}>
+                            <table width="100%" align="center" cellPadding="0" cellSpacing="0" border="0" style={{width: '100%', maxWidth: '768px', margin: '0 auto', backgroundColor: '#ffffff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e5e7eb', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'}}>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            
+                                <table width="100%" cellPadding="0" cellSpacing="0" border="0" style={{backgroundColor: '#e11b22', color: '#ffffff'}}>
+                                    <tbody>
+                                        <tr style={{ display: isMobilePreview ? 'block' : 'table-row' }}>
+                                            <td style={{padding: isMobilePreview ? '15px 20px' : '24px 32px', textAlign: isMobilePreview ? 'center' : 'left', display: isMobilePreview ? 'block' : 'table-cell', width: isMobilePreview ? '100%' : 'auto', boxSizing: 'border-box'}} valign="middle">
+                                                <h1 style={{fontSize: '24px', fontWeight: 'bold', margin: '0', letterSpacing: '1px'}}>FLASH NEWS</h1>
+                                                <p style={{fontSize: '14px', fontWeight: 'bold', margin: '4px 0 0 0', letterSpacing: '2px', textTransform: 'uppercase'}}>Aliados VIP CE</p>
+                                            </td>
+                                            <td style={{padding: isMobilePreview ? '0 20px 20px 20px' : '24px 32px', textAlign: isMobilePreview ? 'center' : 'right', display: isMobilePreview ? 'block' : 'table-cell', width: isMobilePreview ? '100%' : 'auto', boxSizing: 'border-box'}} valign="middle">
+                                                <span style={{backgroundColor: '#ffffff', color: '#e11b22', padding: '6px 16px', borderRadius: '9999px', fontSize: '14px', fontWeight: 'bold', display: 'inline-block'}}>
+                                                    {mes || 'MES Y AÑO'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div>
+                                    <img src={heroImage || defaultHeroImage} alt="Portada" width="768" style={{width: '100%', maxWidth: '768px', height: 'auto', display: 'block', margin: '0 auto', border: '0'}} />
+                                    <div className="bg-usfq-dark" style={{backgroundColor: '#1a1a1a', padding: '32px', textAlign: 'center', color: '#ffffff'}}>
+                                        <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', marginTop: '0'}}>¡Nuevas Oportunidades este Mes!</h2>
+                                        <p style={{fontSize: '14px', color: '#e5e7eb', marginBottom: '20px', maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto', marginTop: '0'}}>
+                                            Descubre los beneficios y descuentos exclusivos diseñados especialmente para ti y tu equipo. Aprovecha al máximo tu membresía y comparte estas increíbles oportunidades.
+                                        </p>
+                                        <div style={{textAlign: 'center'}}>
+                                            <a href="https://www.usfq.edu.ec/es/contacto/contacto-empresarial/beneficios-vip" target="_blank" className="bg-usfq-red" style={{display: 'inline-block', backgroundColor: '#e11b22', color: '#ffffff', fontWeight: 'bold', padding: '12px 24px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px'}} rel="noreferrer">
+                                                <span style={{marginRight: '8px', fontSize: '16px'}}>🎁</span> Lista completa de beneficios
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{padding: '32px 32px 0 32px'}}>
+                                    <table width="100%" cellPadding="0" cellSpacing="0" border="0" style={{backgroundColor: '#fef2f2', borderLeft: '4px solid #e11b22', borderRadius: '0 8px 8px 0'}}>
+                                        <tbody>
+                                            <tr>
+                                                <td width="40" valign="top" style={{padding: '20px 0 20px 20px', fontSize: '24px', textAlign: 'center'}}>
+                                                    💳
+                                                </td>
+                                                <td valign="top" style={{padding: '20px 20px 20px 10px', fontSize: '14px', color: '#1a1a1a', lineHeight: '1.5'}}>
+                                                    <strong>Recuerda:</strong> Para acceder a cualquier beneficio, debes presentar tu credencial de la empresa junto con tu credencial digital de Aliado VIP CE.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="px-8 py-10" style={{padding: '40px 32px'}}>
+                                    <table width="100%" cellPadding="0" cellSpacing="0" border="0" style={{width: '100%', maxWidth: '100%'}}>
+                                        <tbody>
+                                            {Array.from({ length: Math.ceil(tarjetas.length / 2) }).map((_, rowIndex) => {
+                                                const t1 = tarjetas[rowIndex * 2];
+                                                const t2 = tarjetas[rowIndex * 2 + 1];
+                                                return (
+                                                    <tr key={rowIndex} style={{ display: isMobilePreview ? 'block' : 'table-row' }}>
+                                                        <td width={t2 && !isMobilePreview ? "48%" : "100%"} colSpan={t2 && !isMobilePreview ? 1 : 3} valign="top" align="center" style={{paddingBottom: '30px', display: isMobilePreview ? 'block' : 'table-cell', width: isMobilePreview ? '100%' : 'auto', boxSizing: 'border-box'}}>
+                                                            <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden" style={{width: '100%', maxWidth: '350px', margin: '0 auto', textAlign: 'left'}}>
+                                                                <a href={t1.linkGrande || '#'} target="_blank" className="block overflow-hidden" style={{backgroundColor: '#f8fafc', textAlign: 'center', borderBottom: '1px solid #e2e8f0', padding: '10px', display: 'block'}} rel="noreferrer">
+                                                                    <img src={t1.imagen || defaultCardImage} alt="Arte" width="330" style={{width: '100%', maxWidth: '330px', height: 'auto', display: 'block', margin: '0 auto', border: '0'}} />
+                                                                </a>
+                                                                <div className="p-5" style={{padding: '20px'}}>
+                                                                    {t1.categoria && <div className="text-usfq-red uppercase" style={{color: '#e11b22', fontWeight: 'bold', fontSize: '12px', marginBottom: '8px'}}>{t1.categoria}</div>}
+                                                                    {t1.titulo && <h4 className="text-gray-800 leading-tight" style={{color: '#1f2937', fontWeight: 'bold', fontSize: '16px', marginTop: '0', marginBottom: '8px'}}>{t1.titulo}</h4>}
+                                                                    {t1.descripcion && <p className="text-gray-500" style={{color: '#6b7280', fontSize: '14px', marginTop: '0', marginBottom: '16px'}}>{t1.descripcion}</p>}
+                                                                    
+                                                                    <a href={t1.ctaLink || '#'} className="bg-usfq-red hover:bg-red-700 text-white transition-colors" style={{backgroundColor: '#e11b22', color: '#ffffff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', display: 'block', textAlign: 'center', fontWeight: 'bold'}} rel="noreferrer">
+                                                                        <span style={{marginRight: '8px', fontSize: '16px'}}>{getEmoji(t1.ctaIcono)}</span> {t1.ctaTexto || 'Me Interesa'}
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        {t2 && !isMobilePreview && (
+                                                            <td width="4%" style={{width: '4%'}}></td>
+                                                        )}
+                                                        {t2 && (
+                                                            <td width={isMobilePreview ? "100%" : "48%"} valign="top" align="center" style={{paddingBottom: '30px', display: isMobilePreview ? 'block' : 'table-cell', width: isMobilePreview ? '100%' : 'auto', boxSizing: 'border-box'}}>
+                                                                <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden" style={{width: '100%', maxWidth: '350px', margin: '0 auto', textAlign: 'left'}}>
+                                                                    <a href={t2.linkGrande || '#'} target="_blank" className="block overflow-hidden" style={{backgroundColor: '#f8fafc', textAlign: 'center', borderBottom: '1px solid #e2e8f0', padding: '10px', display: 'block'}} rel="noreferrer">
+                                                                        <img src={t2.imagen || defaultCardImage} alt="Arte" width="330" style={{width: '100%', maxWidth: '330px', height: 'auto', display: 'block', margin: '0 auto', border: '0'}} />
+                                                                    </a>
+                                                                    <div className="p-5" style={{padding: '20px'}}>
+                                                                        {t2.categoria && <div className="text-usfq-red uppercase" style={{color: '#e11b22', fontWeight: 'bold', fontSize: '12px', marginBottom: '8px'}}>{t2.categoria}</div>}
+                                                                        {t2.titulo && <h4 className="text-gray-800 leading-tight" style={{color: '#1f2937', fontWeight: 'bold', fontSize: '16px', marginTop: '0', marginBottom: '8px'}}>{t2.titulo}</h4>}
+                                                                        {t2.descripcion && <p className="text-gray-500" style={{color: '#6b7280', fontSize: '14px', marginTop: '0', marginBottom: '16px'}}>{t2.descripcion}</p>}
+                                                                        
+                                                                        <a href={t2.ctaLink || '#'} className="bg-usfq-red hover:bg-red-700 text-white transition-colors" style={{backgroundColor: '#e11b22', color: '#ffffff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', display: 'block', textAlign: 'center', fontWeight: 'bold'}} rel="noreferrer">
+                                                                            <span style={{marginRight: '8px', fontSize: '16px'}}>{getEmoji(t2.ctaIcono)}</span> {t2.ctaTexto || 'Me Interesa'}
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="bg-usfq-dark text-gray-400 py-8 px-8 text-center text-sm">
+                                    <h5 className="mb-4 text-white font-bold tracking-widest uppercase">Oficina de Contacto Empresarial</h5>
+                                    <p className="mb-4">Este es un correo exclusivo para Aliados VIP CE.</p>
+                                    <div style={{textAlign: 'center'}}>
+                                        <a href="#" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>Facebook</a>
+                                        <a href="#" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>Instagram</a>
+                                        <a href="#" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>LinkedIn</a>
+                                    </div>
+                                </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+    
+    <style>
+        /* Estilos globales para la UI (no para el email) */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</body>
+</html>
