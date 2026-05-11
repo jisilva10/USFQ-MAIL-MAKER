@@ -122,14 +122,56 @@
             const [isUploadingHero, setIsUploadingHero] = useState(false);
             const [uploadingCards, setUploadingCards] = useState({});
 
-            const uploadToImgBB = async (file, onSuccess, onStart, onEnd) => {
-                if (!file) return;
+            const compressImage = (file, maxWidth = 800, quality = 0.8) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > maxWidth) {
+                                height = Math.round((maxWidth * height) / width);
+                                width = maxWidth;
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            
+                            // Fondo blanco para evitar fondos negros en PNGs transparentes
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            canvas.toBlob((blob) => {
+                                resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now()
+                                }));
+                            }, 'image/jpeg', quality);
+                        };
+                    };
+                });
+            };
+
+            const uploadToImgBB = async (originalFile, onSuccess, onStart, onEnd) => {
+                if (!originalFile) return;
 
                 onStart();
-                const formData = new FormData();
-                formData.append('image', file);
 
                 try {
+                    // Comprimir la imagen antes de subirla
+                    const compressedFile = await compressImage(originalFile, 800, 0.8);
+                    
+                    const formData = new FormData();
+                    formData.append('image', compressedFile);
+
                     const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
                         method: 'POST',
                         body: formData
@@ -143,7 +185,7 @@
                     }
                 } catch (error) {
                     console.error('Upload error:', error);
-                    alert('Error de conexión al subir la imagen.');
+                    alert('Error de conexión al subir la imagen o al comprimir.');
                 } finally {
                     onEnd();
                 }
