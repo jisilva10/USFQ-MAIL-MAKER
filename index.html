@@ -83,15 +83,29 @@
             return `${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
         };
 
+        const getInitialMes = () => localStorage.getItem('usfq_mes') || getMesAnioActual();
+        const getInitialHeroImage = () => localStorage.getItem('usfq_heroImage') || '';
+        const getInitialTarjetas = () => {
+            const saved = localStorage.getItem('usfq_tarjetas');
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) { return initialCards; }
+            }
+            return initialCards;
+        };
+
         function App() {
-            const [mes, setMes] = useState(getMesAnioActual());
-            const [heroImage, setHeroImage] = useState('');
-            const [tarjetas, setTarjetas] = useState(initialCards);
+            const [mes, setMes] = useState(getInitialMes);
+            const [heroImage, setHeroImage] = useState(getInitialHeroImage);
+            const [tarjetas, setTarjetas] = useState(getInitialTarjetas);
             const [activeAccordion, setActiveAccordion] = useState(0);
             const [isMobilePreview, setIsMobilePreview] = useState(false);
             const [isCopied, setIsCopied] = useState(false);
             const [validationErrors, setValidationErrors] = useState([]);
             const [isModalOpen, setIsModalOpen] = useState(false);
+
+            useEffect(() => { localStorage.setItem('usfq_mes', mes); }, [mes]);
+            useEffect(() => { localStorage.setItem('usfq_heroImage', heroImage); }, [heroImage]);
+            useEffect(() => { localStorage.setItem('usfq_tarjetas', JSON.stringify(tarjetas)); }, [tarjetas]);
 
             const getEmoji = (iconClass) => {
                 if (!iconClass) return '👉';
@@ -182,7 +196,7 @@
                                 ${t1.titulo ? `<h4 class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t1.titulo}</h4>` : ''}
                                 ${t1.descripcion ? `<p class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t1.descripcion}</p>` : ''}
                                 
-                                <a href="${t1.ctaLink || '#'}" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
+                                <a href="${t1.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
                                     <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t1.ctaIcono)}</span> ${t1.ctaTexto || 'Me Interesa'}
                                 </a>
                             </div>
@@ -202,7 +216,7 @@
                                 ${t2.titulo ? `<h4 class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t2.titulo}</h4>` : ''}
                                 ${t2.descripcion ? `<p class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t2.descripcion}</p>` : ''}
                                 
-                                <a href="${t2.ctaLink || '#'}" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
+                                <a href="${t2.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
                                     <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t2.ctaIcono)}</span> ${t2.ctaTexto || 'Me Interesa'}
                                 </a>
                             </div>
@@ -289,9 +303,9 @@
             <h5 style="margin-top: 0; margin-bottom: 16px; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">Oficina de Contacto Empresarial</h5>
             <p style="margin-top: 0; margin-bottom: 16px;">Este es un correo exclusivo para Aliados VIP CE.</p>
             <div style="text-align: center;">
-                <a href="#" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">Facebook</a>
-                <a href="#" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">Instagram</a>
-                <a href="#" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">LinkedIn</a>
+                <a href="#" target="_blank" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">Facebook</a>
+                <a href="#" target="_blank" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">Instagram</a>
+                <a href="#" target="_blank" style="color: #9ca3af; margin: 0 10px; text-decoration: none; font-weight: bold;">LinkedIn</a>
             </div>
         </div>
 
@@ -634,7 +648,7 @@
                                                                     {t1.titulo && <h4 className="text-gray-800 leading-tight" style={{color: '#1f2937', fontWeight: 'bold', fontSize: '16px', marginTop: '0', marginBottom: '8px'}}>{t1.titulo}</h4>}
                                                                     {t1.descripcion && <p className="text-gray-500" style={{color: '#6b7280', fontSize: '14px', marginTop: '0', marginBottom: '16px'}}>{t1.descripcion}</p>}
                                                                     
-                                                                    <a href={t1.ctaLink || '#'} className="bg-usfq-red hover:bg-red-700 text-white transition-colors" style={{backgroundColor: '#e11b22', color: '#ffffff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', display: 'block', textAlign: 'center', fontWeight: 'bold'}} rel="noreferrer">
+                                                                    <a href={t1.ctaLink || '#'} target="_blank" className="bg-usfq-red hover:bg-red-700 text-white transition-colors" style={{backgroundColor: '#e11b22', color: '#ffffff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', display: 'block', textAlign: 'center', fontWeight: 'bold'}} rel="noreferrer">
                                                                         <span style={{marginRight: '8px', fontSize: '16px'}}>{getEmoji(t1.ctaIcono)}</span> {t1.ctaTexto || 'Me Interesa'}
                                                                     </a>
                                                                 </div>
@@ -654,7 +668,7 @@
                                                                         {t2.titulo && <h4 className="text-gray-800 leading-tight" style={{color: '#1f2937', fontWeight: 'bold', fontSize: '16px', marginTop: '0', marginBottom: '8px'}}>{t2.titulo}</h4>}
                                                                         {t2.descripcion && <p className="text-gray-500" style={{color: '#6b7280', fontSize: '14px', marginTop: '0', marginBottom: '16px'}}>{t2.descripcion}</p>}
                                                                         
-                                                                        <a href={t2.ctaLink || '#'} className="bg-usfq-red hover:bg-red-700 text-white transition-colors" style={{backgroundColor: '#e11b22', color: '#ffffff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', display: 'block', textAlign: 'center', fontWeight: 'bold'}} rel="noreferrer">
+                                                                        <a href={t2.ctaLink || '#'} target="_blank" className="bg-usfq-red hover:bg-red-700 text-white transition-colors" style={{backgroundColor: '#e11b22', color: '#ffffff', textDecoration: 'none', padding: '10px 15px', borderRadius: '8px', display: 'block', textAlign: 'center', fontWeight: 'bold'}} rel="noreferrer">
                                                                             <span style={{marginRight: '8px', fontSize: '16px'}}>{getEmoji(t2.ctaIcono)}</span> {t2.ctaTexto || 'Me Interesa'}
                                                                         </a>
                                                                     </div>
@@ -672,9 +686,9 @@
                                     <h5 className="mb-4 text-white font-bold tracking-widest uppercase">Oficina de Contacto Empresarial</h5>
                                     <p className="mb-4">Este es un correo exclusivo para Aliados VIP CE.</p>
                                     <div style={{textAlign: 'center'}}>
-                                        <a href="#" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>Facebook</a>
-                                        <a href="#" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>Instagram</a>
-                                        <a href="#" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>LinkedIn</a>
+                                        <a href="#" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>Facebook</a>
+                                        <a href="#" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>Instagram</a>
+                                        <a href="#" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors" style={{margin: '0 10px', textDecoration: 'none', fontWeight: 'bold'}}>LinkedIn</a>
                                     </div>
                                 </div>
                                         </td>
