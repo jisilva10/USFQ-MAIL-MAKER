@@ -86,9 +86,9 @@
         const getInitialMes = () => localStorage.getItem('usfq_mes') || getMesAnioActual();
         const getInitialHeroImage = () => localStorage.getItem('usfq_heroImage') || '';
         const getInitialTemplate = () => localStorage.getItem('usfq_template') || 'ce';
-        const getInitialLinkRed = () => localStorage.getItem('usfq_linkRed') || '';
-        const getInitialTarjetas = () => {
-            const saved = localStorage.getItem('usfq_tarjetas');
+        const getInitialLinkRed = () => localStorage.getItem('usfq_linkRed') || 'https://www.usfq.edu.ec/es/contacto/contacto-empresarial/beneficios-vip';
+        const getInitialTarjetas = (key) => {
+            const saved = localStorage.getItem(key);
             if (saved) {
                 try { return JSON.parse(saved); } catch (e) { return initialCards; }
             }
@@ -100,7 +100,11 @@
             const [linkRedEmpresarial, setLinkRedEmpresarial] = useState(getInitialLinkRed);
             const [mes, setMes] = useState(getInitialMes);
             const [heroImage, setHeroImage] = useState(getInitialHeroImage);
-            const [tarjetas, setTarjetas] = useState(getInitialTarjetas);
+            const [tarjetasCE, setTarjetasCE] = useState(() => getInitialTarjetas('usfq_tarjetas_ce'));
+            const [tarjetasAlumni, setTarjetasAlumni] = useState(() => getInitialTarjetas('usfq_tarjetas_alumni'));
+
+            const tarjetas = templateType === 'ce' ? tarjetasCE : tarjetasAlumni;
+            const setTarjetas = templateType === 'ce' ? setTarjetasCE : setTarjetasAlumni;
             const [activeAccordion, setActiveAccordion] = useState(0);
             const [isMobilePreview, setIsMobilePreview] = useState(false);
             const [isCopied, setIsCopied] = useState(false);
@@ -110,16 +114,22 @@
 
             useEffect(() => { localStorage.setItem('usfq_mes', mes); }, [mes]);
             useEffect(() => { localStorage.setItem('usfq_heroImage', heroImage); }, [heroImage]);
-            useEffect(() => { localStorage.setItem('usfq_tarjetas', JSON.stringify(tarjetas)); }, [tarjetas]);
+            useEffect(() => { localStorage.setItem('usfq_tarjetas_ce', JSON.stringify(tarjetasCE)); }, [tarjetasCE]);
+            useEffect(() => { localStorage.setItem('usfq_tarjetas_alumni', JSON.stringify(tarjetasAlumni)); }, [tarjetasAlumni]);
             useEffect(() => { localStorage.setItem('usfq_template', templateType); }, [templateType]);
             useEffect(() => { localStorage.setItem('usfq_linkRed', linkRedEmpresarial); }, [linkRedEmpresarial]);
 
             const handleReset = () => {
                 // Conservamos el mes actual para no perder el progreso del periodo de trabajo
-                setHeroImage('');
-                setTarjetas(initialCards);
-                localStorage.removeItem('usfq_heroImage');
-                localStorage.removeItem('usfq_tarjetas');
+                if (templateType === 'ce') {
+                    setHeroImage('');
+                    setTarjetasCE(initialCards);
+                    localStorage.removeItem('usfq_heroImage');
+                    localStorage.removeItem('usfq_tarjetas_ce');
+                } else {
+                    setTarjetasAlumni(initialCards);
+                    localStorage.removeItem('usfq_tarjetas_alumni');
+                }
                 setIsResetModalOpen(false);
                 setActiveAccordion(0);
             };
@@ -455,8 +465,7 @@
             <td>
                 <!-- HEADER TIPO BANNER ALUMNI -->
                 <div class="mobile-pad" style="background-color: #e11b22; padding: 48px 32px 32px 32px; text-align: center; position: relative; background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0); background-size: 24px 24px;">
-                    <h1 style="font-size: 60px; font-weight: 900; color: #ffffff; letter-spacing: -2px; margin: 0 0 8px 0; font-family: 'Times New Roman', Times, serif;">USFQ</h1>
-                    <h2 style="font-size: 30px; font-weight: bold; color: #ffffff; letter-spacing: 4px; text-transform: uppercase; margin: 0 0 24px 0;">ALUMNI</h2>
+                    <img src="https://i.ibb.co/mrZqjzFZ/usfq-alumni.png" alt="usfq alumni" border="0" style="width: 100%; max-width: 300px; height: auto; margin: 0 auto 24px auto; display: block;">
                     
                     <span style="display: inline-block; background-color: #111111; color: #ffffff; padding: 6px 24px; border-radius: 9999px; font-size: 14px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border: 1px solid rgba(17,17,17,0.5);">
                         ${mes || 'MES Y AÑO'}
