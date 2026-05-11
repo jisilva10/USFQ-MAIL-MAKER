@@ -368,8 +368,9 @@
 
         <!-- FOOTER -->
         <div style="background-color: #1a1a1a; color: #9ca3af; padding: 32px; text-align: center; font-size: 14px;">
-            <h5 style="margin-top: 0; margin-bottom: 16px; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">Oficina de Contacto Empresarial</h5>
-            <p style="margin-top: 0; margin-bottom: 16px;">Este es un correo exclusivo para Aliados VIP CE.</p>
+            <h5 style="margin-top: 0; margin-bottom: 8px; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">USFQ PATH</h5>
+            <p style="margin: 0 0 8px 0;">Casa Tomate 301</p>
+            <p style="margin: 0 0 16px 0;"><a href="mailto:gestionalumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">gestionalumni@usfq.edu.ec</a></p>
             <div style="text-align: center; margin-top: 10px;">
                 <a href="https://api.whatsapp.com/send?phone=593999044984" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; margin-bottom: 15px;">
                     <span style="margin-right: 8px;">📱</span> WhatsApp: +593 99 904 4984
@@ -503,9 +504,9 @@
 
                 <!-- FOOTER ALUMNI -->
                 <div class="mobile-pad" style="background-color: #111111; color: #9ca3af; padding: 40px 32px; text-align: center; font-size: 14px; border-top: 4px solid #e11b22;">
-                    <h5 style="margin: 0 0 12px 0; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">Oficina de Contacto Empresarial</h5>
+                    <h5 style="margin: 0 0 8px 0; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">USFQ PATH</h5>
                     <p style="margin: 0 0 8px 0;">Casa Tomate 301</p>
-                    <p style="margin: 0 0 24px 0;"><a href="mailto:contactoempresarial@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">contactoempresarial@usfq.edu.ec</a></p>
+                    <p style="margin: 0 0 24px 0;"><a href="mailto:alumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">alumni@usfq.edu.ec</a></p>
                     
                     <p style="margin: 0 0 16px 0; font-size: 12px;">Síguenos en nuestras redes sociales y mantente al tanto de todas nuestras noticias.</p>
                 </div>
@@ -760,34 +761,34 @@
 
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div>
-                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
                                                             <input 
                                                                 type="text" 
                                                                 value={tarjeta.categoria} 
                                                                 onChange={(e) => updateTarjeta(tarjeta.id, 'categoria', e.target.value)}
                                                                 className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red"
-                                                                placeholder="Ej. Experiencia"
+                                                                placeholder="Título principal"
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo</label>
                                                             <input 
                                                                 type="text" 
                                                                 value={tarjeta.titulo} 
                                                                 onChange={(e) => updateTarjeta(tarjeta.id, 'titulo', e.target.value)}
                                                                 className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red"
-                                                                placeholder="Título de la tarjeta"
+                                                                placeholder="Subtítulo de la tarjeta"
                                                             />
                                                         </div>
                                                     </div>
 
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Contenido</label>
                                                         <textarea 
                                                             value={tarjeta.descripcion} 
                                                             onChange={(e) => updateTarjeta(tarjeta.id, 'descripcion', e.target.value)}
                                                             className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-usfq-red focus:border-usfq-red h-20 resize-none"
-                                                            placeholder="Breve descripción..."
+                                                            placeholder="Contenido de la tarjeta..."
                                                         ></textarea>
                                                     </div>
 
