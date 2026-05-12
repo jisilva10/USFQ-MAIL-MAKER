@@ -613,51 +613,44 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    const iframe = iframeRef.current;
-                    const iframeContainer = iframe.parentElement;
-                    const iframeDoc = iframe.contentWindow?.document;
-                    
-                    if (!iframeDoc || !iframeDoc.body) {
-                        alert("Error al acceder a la vista previa.");
+                    // 1. Extraer el HTML puro (sin dependencias del iframe o scrollbars)
+                    const htmlString = generateHTML();
+                    const bodyMatch = htmlString.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+                    if (!bodyMatch) {
+                        alert("Error al extraer el contenido para el PDF.");
                         setIsDownloadingPDF(false);
                         return;
                     }
 
-                    // Guardar estilos originales
-                    const originalMaxWidth = iframeContainer.style.maxWidth;
-                    const originalWidth = iframeContainer.style.width;
-                    const originalHeight = iframeContainer.style.height;
-                    const originalOverflow = iframeContainer.style.overflow;
-                    const originalPosition = iframeContainer.style.position;
-                    const originalTop = iframeContainer.style.top;
-                    const originalLeft = iframeContainer.style.left;
-                    const originalZIndex = iframeContainer.style.zIndex;
-                    const originalMargin = iframeContainer.style.margin;
-                    const originalIframeWidth = iframe.style.width;
-                    const originalIframeHeight = iframe.style.height;
-
-                    // Calcular altura real y forzar dimensiones para el render
-                    const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
-                    const pdfWidth = 768; // Ancho óptimo del correo
+                    // 2. Crear un contenedor oculto perfecto de 768px
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.width = '768px';
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px'; // Fuera de pantalla
+                    tempDiv.style.top = '0';
+                    tempDiv.style.backgroundColor = '#f3f4f6';
+                    tempDiv.style.padding = '32px 0'; // El padding original del body
+                    tempDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
+                    tempDiv.style.color = '#1f2937';
+                    tempDiv.style.boxSizing = 'border-box';
+                    tempDiv.innerHTML = bodyMatch[1];
                     
-                    // Expandir temporalmente y anclar a la esquina superior izquierda (para evitar que margin auto lo empuje a coordenadas negativas)
-                    iframeContainer.style.position = 'fixed';
-                    iframeContainer.style.top = '0';
-                    iframeContainer.style.left = '0';
-                    iframeContainer.style.margin = '0';
-                    iframeContainer.style.zIndex = '9999';
-                    iframeContainer.style.overflow = 'visible';
-                    iframeContainer.style.maxWidth = 'none';
-                    iframeContainer.style.width = pdfWidth + 'px';
-                    iframeContainer.style.height = scrollHeight + 'px';
-                    iframe.style.width = pdfWidth + 'px';
-                    iframe.style.height = scrollHeight + 'px';
+                    document.body.appendChild(tempDiv);
 
-                    // Esperar a que el DOM aplique los cambios
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    // 3. Forzar carga de imágenes antes de capturar
+                    const images = Array.from(tempDiv.getElementsByTagName('img'));
+                    await Promise.all(images.map(img => {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise(resolve => {
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                        });
+                    }));
 
-                    // Recalcular por si cambió al ajustar el ancho
-                    const finalHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
+                    // 4. Calcular dimensiones exactas
+                    const pdfWidth = 768;
+                    // Se suma un ligero margen (20px) para evitar saltos a una 2da página por decimales
+                    const pdfHeight = tempDiv.scrollHeight + 20;
 
                     // Formato de nombre: [AÑO] [MES] FLASH NEWS [CE o ALUMNI].pdf
                     const mesParts = mes.trim().split(' ');
@@ -665,7 +658,6 @@
                     const nombreMes = mesParts[0] || 'MES';
                     const fileName = `${anio} ${nombreMes} FLASH NEWS ${templateType.toUpperCase()}.pdf`;
 
-                    const element = iframeDoc.body;
                     const opt = {
                         margin: 0,
                         filename: fileName,
@@ -681,25 +673,15 @@
                         },
                         jsPDF: { 
                             unit: 'px', 
-                            format: [pdfWidth, finalHeight], 
+                            format: [pdfWidth, pdfHeight], 
                             orientation: 'portrait' 
                         }
                     };
 
-                    await window.html2pdf().set(opt).from(element).save();
+                    await window.html2pdf().set(opt).from(tempDiv).save();
 
-                    // Restaurar estilos originales
-                    iframeContainer.style.position = originalPosition;
-                    iframeContainer.style.top = originalTop;
-                    iframeContainer.style.left = originalLeft;
-                    iframeContainer.style.margin = originalMargin;
-                    iframeContainer.style.zIndex = originalZIndex;
-                    iframeContainer.style.overflow = originalOverflow;
-                    iframeContainer.style.maxWidth = originalMaxWidth;
-                    iframeContainer.style.width = originalWidth;
-                    iframeContainer.style.height = originalHeight;
-                    iframe.style.width = originalIframeWidth;
-                    iframe.style.height = originalIframeHeight;
+                    // 5. Limpieza
+                    document.body.removeChild(tempDiv);
 
                 } catch (error) {
                     console.error("Error al generar PDF:", error);
