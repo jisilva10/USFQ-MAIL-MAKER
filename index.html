@@ -613,45 +613,20 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    // 1. Extraer el HTML puro (sin dependencias del iframe o scrollbars)
-                    const htmlString = generateHTML();
-                    const bodyMatch = htmlString.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-                    if (!bodyMatch) {
-                        alert("Error al extraer el contenido para el PDF.");
+                    const iframeDoc = iframeRef.current?.contentWindow?.document;
+                    if (!iframeDoc || !iframeDoc.body) {
+                        alert("Error al acceder a la vista previa.");
                         setIsDownloadingPDF(false);
                         return;
                     }
 
-                    // 2. Crear un contenedor oculto perfecto de 768px
-                    const tempDiv = document.createElement('div');
-                    tempDiv.style.width = '768px';
-                    tempDiv.style.position = 'absolute';
-                    tempDiv.style.left = '0'; 
-                    tempDiv.style.top = '0';
-                    tempDiv.style.zIndex = '-9999'; // Detrás de la interfaz principal para no estorbar
-                    tempDiv.style.backgroundColor = '#f3f4f6';
-                    tempDiv.style.padding = '32px 0'; // El padding original del body
-                    tempDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
-                    tempDiv.style.color = '#1f2937';
-                    tempDiv.style.boxSizing = 'border-box';
-                    tempDiv.innerHTML = bodyMatch[1];
-                    
-                    document.body.appendChild(tempDiv);
+                    // 1. Extraer el HTML generado
+                    const htmlString = generateHTML();
 
-                    // 3. Forzar carga de imágenes antes de capturar
-                    const images = Array.from(tempDiv.getElementsByTagName('img'));
-                    await Promise.all(images.map(img => {
-                        if (img.complete) return Promise.resolve();
-                        return new Promise(resolve => {
-                            img.onload = resolve;
-                            img.onerror = resolve;
-                        });
-                    }));
-
-                    // 4. Calcular dimensiones exactas
+                    // 2. Usar la altura de la vista previa existente
+                    const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
                     const pdfWidth = 768;
-                    // Se suma un ligero margen (20px) para evitar saltos a una 2da página por decimales
-                    const pdfHeight = tempDiv.scrollHeight + 20;
+                    const pdfHeight = scrollHeight + 20; // 20px de margen inferior
 
                     // Formato de nombre: [AÑO] [MES] FLASH NEWS [CE o ALUMNI].pdf
                     const mesParts = mes.trim().split(' ');
@@ -668,9 +643,7 @@
                             useCORS: true,
                             backgroundColor: '#f3f4f6',
                             width: pdfWidth,
-                            windowWidth: pdfWidth,
-                            scrollY: 0,
-                            scrollX: 0
+                            windowWidth: pdfWidth
                         },
                         jsPDF: { 
                             unit: 'px', 
@@ -679,10 +652,9 @@
                         }
                     };
 
-                    await window.html2pdf().set(opt).from(tempDiv).save();
-
-                    // 5. Limpieza
-                    document.body.removeChild(tempDiv);
+                    // Pasamos el string HTML directamente. html2pdf creará un iframe virtual prístino 
+                    // sin verse afectado por el "overflow: hidden" de nuestra app.
+                    await window.html2pdf().set(opt).from(htmlString).save();
 
                 } catch (error) {
                     console.error("Error al generar PDF:", error);
