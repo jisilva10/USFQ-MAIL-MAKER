@@ -613,37 +613,75 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    const iframeDoc = iframeRef.current?.contentWindow?.document;
+                    const iframe = iframeRef.current;
+                    const iframeContainer = iframe.parentElement;
+                    const iframeDoc = iframe.contentWindow?.document;
+                    
                     if (!iframeDoc || !iframeDoc.body) {
                         alert("Error al acceder a la vista previa.");
                         setIsDownloadingPDF(false);
                         return;
                     }
 
-                    // Calcular altura para 1 sola página
+                    // Guardar estilos originales
+                    const originalMaxWidth = iframeContainer.style.maxWidth;
+                    const originalWidth = iframeContainer.style.width;
+                    const originalHeight = iframeContainer.style.height;
+                    const originalIframeWidth = iframe.style.width;
+                    const originalIframeHeight = iframe.style.height;
+
+                    // Calcular altura real y forzar dimensiones para el render
                     const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
-                    const pdfWidth = 768; // max-width del body
-                    const pdfHeight = Math.max(scrollHeight, 1000);
+                    const pdfWidth = 768; // Ancho óptimo del correo
+                    
+                    // Expandir temporalmente para que html2canvas capture todo sin recortes
+                    iframeContainer.style.maxWidth = 'none';
+                    iframeContainer.style.width = pdfWidth + 'px';
+                    iframeContainer.style.height = scrollHeight + 'px';
+                    iframe.style.width = pdfWidth + 'px';
+                    iframe.style.height = scrollHeight + 'px';
+
+                    // Esperar a que el DOM aplique los cambios
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                    // Recalcular por si cambió al ajustar el ancho
+                    const finalHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
+
+                    // Formato de nombre: [AÑO] [MES] FLASH NEWS [CE o ALUMNI].pdf
+                    const mesParts = mes.trim().split(' ');
+                    const anio = mesParts.length > 1 ? mesParts[1] : new Date().getFullYear();
+                    const nombreMes = mesParts[0] || 'MES';
+                    const fileName = `${anio} ${nombreMes} FLASH NEWS ${templateType.toUpperCase()}.pdf`;
 
                     const element = iframeDoc.body;
                     const opt = {
                         margin: 0,
-                        filename: `USFQ_${templateType.toUpperCase()}_${mes.replace(/ /g, '_')}.pdf`,
-                        image: { type: 'jpeg', quality: 0.98 },
+                        filename: fileName,
+                        image: { type: 'jpeg', quality: 1 },
                         html2canvas: { 
                             scale: 2, 
                             useCORS: true,
                             backgroundColor: '#f3f4f6',
-                            windowWidth: pdfWidth
+                            width: pdfWidth,
+                            windowWidth: pdfWidth,
+                            scrollY: 0
                         },
                         jsPDF: { 
                             unit: 'px', 
-                            format: [pdfWidth, pdfHeight], 
+                            format: [pdfWidth, finalHeight], 
                             orientation: 'portrait' 
                         }
                     };
 
                     await window.html2pdf().set(opt).from(element).save();
+
+                    // Restaurar estilos originales
+                    iframeContainer.style.maxWidth = originalMaxWidth;
+                    iframeContainer.style.width = originalWidth;
+                    iframeContainer.style.height = originalHeight;
+                    iframe.style.width = originalIframeWidth;
+                    iframe.style.height = originalIframeHeight;
+
                 } catch (error) {
                     console.error("Error al generar PDF:", error);
                     alert("Hubo un error al generar el PDF.");
