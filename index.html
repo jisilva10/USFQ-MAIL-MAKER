@@ -621,7 +621,28 @@
                     }
 
                     // 1. Extraer el HTML generado
-                    const htmlString = generateHTML();
+                    let htmlString = generateHTML();
+                    
+                    // Inyectar CSS estricto para PDF: fuerza que todo mida 768px exactos y se alinee a la izquierda (margin: 0).
+                    // Esto evita que html2canvas lo centre en una ventana virtual más ancha y lo recorte al capturar 768px.
+                    htmlString = htmlString.replace(
+                        '</head>',
+                        `<style>
+                            body { 
+                                width: 768px !important; 
+                                min-width: 768px !important;
+                                margin: 0 !important; 
+                                padding-left: 0 !important; 
+                                padding-right: 0 !important; 
+                            }
+                            body > table { 
+                                width: 768px !important; 
+                                min-width: 768px !important;
+                                max-width: 768px !important; 
+                                margin: 0 !important; 
+                            }
+                        </style></head>`
+                    );
 
                     // 2. Usar la altura de la vista previa existente
                     const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
