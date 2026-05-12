@@ -613,18 +613,42 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    // 1. Extraer el HTML generado
-                    const htmlString = generateHTML();
+                    // 1. Extraer el HTML generado y forzar alineación estricta a la izquierda
+                    let htmlString = generateHTML();
+                    
+                    // Destruir cualquier intento de centrado que confunda a html2canvas
+                    htmlString = htmlString.replace(/align="center"/g, 'align="left"');
+                    htmlString = htmlString.replace(/margin:\s*0\s+auto/g, 'margin: 0');
+                    
+                    // Inyectar CSS ultra-estricto para anclar todo a la coordenada 0,0
+                    htmlString = htmlString.replace(
+                        '</head>',
+                        `<style>
+                            html, body {
+                                width: 768px !important;
+                                margin: 0 !important;
+                                padding-left: 0 !important;
+                                padding-right: 0 !important;
+                                position: absolute !important;
+                                left: 0 !important;
+                                top: 0 !important;
+                                overflow-x: hidden !important;
+                            }
+                            table {
+                                width: 768px !important;
+                                max-width: 768px !important;
+                                margin: 0 !important;
+                            }
+                        </style></head>`
+                    );
 
                     // 2. Crear un iframe completamente aislado e invisible.
-                    // Esto evita que el flexbox de la app principal distorsione el layout
-                    // y evita los problemas de barras de desplazamiento de la vista previa.
                     const printIframe = document.createElement('iframe');
                     printIframe.style.position = 'fixed';
                     printIframe.style.top = '0';
                     printIframe.style.left = '0';
                     printIframe.style.width = '768px';
-                    printIframe.style.height = '3000px'; // Altura temporal grande
+                    printIframe.style.height = '3000px'; 
                     printIframe.style.opacity = '0';
                     printIframe.style.pointerEvents = 'none';
                     printIframe.style.zIndex = '-9999';
