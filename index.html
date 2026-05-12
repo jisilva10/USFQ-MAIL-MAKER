@@ -613,41 +613,48 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    const iframeDoc = iframeRef.current?.contentWindow?.document;
-                    if (!iframeDoc || !iframeDoc.body) {
-                        alert("Error al acceder a la vista previa.");
-                        setIsDownloadingPDF(false);
-                        return;
-                    }
-
                     // 1. Extraer el HTML generado
-                    let htmlString = generateHTML();
-                    
-                    // Inyectar CSS estricto para PDF: fuerza que todo mida 768px exactos y se alinee a la izquierda (margin: 0).
-                    // Esto evita que html2canvas lo centre en una ventana virtual más ancha y lo recorte al capturar 768px.
-                    htmlString = htmlString.replace(
-                        '</head>',
-                        `<style>
-                            body { 
-                                width: 768px !important; 
-                                min-width: 768px !important;
-                                margin: 0 !important; 
-                                padding-left: 0 !important; 
-                                padding-right: 0 !important; 
-                            }
-                            body > table { 
-                                width: 768px !important; 
-                                min-width: 768px !important;
-                                max-width: 768px !important; 
-                                margin: 0 !important; 
-                            }
-                        </style></head>`
-                    );
+                    const htmlString = generateHTML();
 
-                    // 2. Usar la altura de la vista previa existente
-                    const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
+                    // 2. Crear un iframe completamente aislado e invisible.
+                    // Esto evita que el flexbox de la app principal distorsione el layout
+                    // y evita los problemas de barras de desplazamiento de la vista previa.
+                    const printIframe = document.createElement('iframe');
+                    printIframe.style.position = 'fixed';
+                    printIframe.style.top = '0';
+                    printIframe.style.left = '0';
+                    printIframe.style.width = '768px';
+                    printIframe.style.height = '3000px'; // Altura temporal grande
+                    printIframe.style.opacity = '0';
+                    printIframe.style.pointerEvents = 'none';
+                    printIframe.style.zIndex = '-9999';
+                    printIframe.style.border = 'none';
+                    
+                    document.body.appendChild(printIframe);
+
+                    const iframeDoc = printIframe.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(htmlString);
+                    iframeDoc.close();
+
+                    // 3. Esperar a que carguen las imágenes en el iframe aislado
+                    const images = Array.from(iframeDoc.getElementsByTagName('img'));
+                    await Promise.all(images.map(img => {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise(resolve => {
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                        });
+                    }));
+
+                    // 4. Medir altura exacta y ajustar iframe
                     const pdfWidth = 768;
-                    const pdfHeight = scrollHeight + 20; // 20px de margen inferior
+                    const pdfHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
+                    // Ajustar iframe a la altura exacta para que no existan scrollbars internas
+                    printIframe.style.height = pdfHeight + 'px';
+
+                    // Esperar a que el navegador redibuje
+                    await new Promise(resolve => setTimeout(resolve, 200));
 
                     // Formato de nombre: [AÑO] [MES] FLASH NEWS [CE o ALUMNI].pdf
                     const mesParts = mes.trim().split(' ');
@@ -664,7 +671,9 @@
                             useCORS: true,
                             backgroundColor: '#f3f4f6',
                             width: pdfWidth,
-                            windowWidth: pdfWidth
+                            windowWidth: pdfWidth,
+                            scrollY: 0,
+                            scrollX: 0
                         },
                         jsPDF: { 
                             unit: 'px', 
@@ -673,9 +682,11 @@
                         }
                     };
 
-                    // Pasamos el string HTML directamente. html2pdf creará un iframe virtual prístino 
-                    // sin verse afectado por el "overflow: hidden" de nuestra app.
-                    await window.html2pdf().set(opt).from(htmlString).save();
+                    // Capturamos el body del iframe aislado
+                    await window.html2pdf().set(opt).from(iframeDoc.body).save();
+
+                    // 5. Limpiar
+                    document.body.removeChild(printIframe);
 
                 } catch (error) {
                     console.error("Error al generar PDF:", error);
