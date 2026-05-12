@@ -110,6 +110,21 @@
             const [validationErrors, setValidationErrors] = useState([]);
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+            const iframeRef = useRef();
+            const scrollPosRef = useRef(0);
+
+            const handleIframeLoad = () => {
+                if (iframeRef.current && iframeRef.current.contentWindow) {
+                    const win = iframeRef.current.contentWindow;
+                    // Restaurar el scroll guardado
+                    win.scrollTo(0, scrollPosRef.current);
+                    
+                    // Escuchar cambios en el scroll para guardarlos
+                    win.addEventListener('scroll', () => {
+                        scrollPosRef.current = win.pageYOffset;
+                    });
+                }
+            };
 
             useEffect(() => { localStorage.setItem('usfq_mes', mes); }, [mes]);
             useEffect(() => { localStorage.setItem('usfq_heroImage', heroImage); }, [heroImage]);
@@ -866,7 +881,9 @@
                             {/* Rendered Template */}
                             <div style={{ maxWidth: isMobilePreview ? '375px' : '100%', margin: '0 auto', transition: 'max-width 0.3s ease', height: 'calc(100vh - 120px)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
                                 <iframe 
+                                    ref={iframeRef}
                                     srcDoc={generateHTML()} 
+                                    onLoad={handleIframeLoad}
                                     style={{ width: '100%', height: '100%', border: 'none' }}
                                     title="Preview"
                                 />
