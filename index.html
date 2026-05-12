@@ -613,56 +613,32 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    // 1. Extraer el HTML generado y forzar alineación estricta a la izquierda
-                    let htmlString = generateHTML();
-                    
-                    // Destruir cualquier intento de centrado que confunda a html2canvas
-                    htmlString = htmlString.replace(/align="center"/g, 'align="left"');
-                    htmlString = htmlString.replace(/margin:\s*0\s+auto/g, 'margin: 0');
-                    
-                    // Inyectar CSS ultra-estricto para anclar todo a la coordenada 0,0
-                    htmlString = htmlString.replace(
-                        '</head>',
-                        `<style>
-                            html, body {
-                                width: 768px !important;
-                                margin: 0 !important;
-                                padding-left: 0 !important;
-                                padding-right: 0 !important;
-                                position: absolute !important;
-                                left: 0 !important;
-                                top: 0 !important;
-                                overflow-x: hidden !important;
-                            }
-                            table {
-                                width: 768px !important;
-                                max-width: 768px !important;
-                                margin: 0 !important;
-                            }
-                        </style></head>`
-                    );
+                    // 1. Extraer el HTML puro (el interior del body para no afectar el documento actual)
+                    const htmlString = generateHTML();
+                    const bodyMatch = htmlString.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+                    if (!bodyMatch) {
+                        alert("Error al extraer el contenido para el PDF.");
+                        setIsDownloadingPDF(false);
+                        return;
+                    }
 
-                    // 2. Crear un iframe completamente aislado e invisible.
-                    const printIframe = document.createElement('iframe');
-                    printIframe.style.position = 'fixed';
-                    printIframe.style.top = '0';
-                    printIframe.style.left = '0';
-                    printIframe.style.width = '768px';
-                    printIframe.style.height = '3000px'; 
-                    printIframe.style.opacity = '0';
-                    printIframe.style.pointerEvents = 'none';
-                    printIframe.style.zIndex = '-9999';
-                    printIframe.style.border = 'none';
+                    // 2. Crear un contenedor limpio y aislado
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.width = '768px';
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '0'; 
+                    tempDiv.style.top = '0';
+                    tempDiv.style.zIndex = '-9999'; // Oculto detrás de la app
+                    tempDiv.style.backgroundColor = '#f3f4f6';
+                    tempDiv.style.padding = '32px 0'; // El padding original
+                    tempDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
+                    tempDiv.style.color = '#1f2937';
+                    tempDiv.innerHTML = bodyMatch[1];
                     
-                    document.body.appendChild(printIframe);
+                    document.body.appendChild(tempDiv);
 
-                    const iframeDoc = printIframe.contentWindow.document;
-                    iframeDoc.open();
-                    iframeDoc.write(htmlString);
-                    iframeDoc.close();
-
-                    // 3. Esperar a que carguen las imágenes en el iframe aislado
-                    const images = Array.from(iframeDoc.getElementsByTagName('img'));
+                    // 3. Esperar carga de imágenes
+                    const images = Array.from(tempDiv.getElementsByTagName('img'));
                     await Promise.all(images.map(img => {
                         if (img.complete) return Promise.resolve();
                         return new Promise(resolve => {
@@ -671,21 +647,18 @@
                         });
                     }));
 
-                    // 4. Medir altura exacta y ajustar iframe
+                    // 4. Calcular dimensiones naturales
                     const pdfWidth = 768;
-                    const pdfHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
-                    // Ajustar iframe a la altura exacta para que no existan scrollbars internas
-                    printIframe.style.height = pdfHeight + 'px';
+                    const pdfHeight = tempDiv.scrollHeight + 20; // +20px para evitar corte de 2da página
 
-                    // Esperar a que el navegador redibuje
-                    await new Promise(resolve => setTimeout(resolve, 200));
-
-                    // Formato de nombre: [AÑO] [MES] FLASH NEWS [CE o ALUMNI].pdf
+                    // Nomenclatura
                     const mesParts = mes.trim().split(' ');
                     const anio = mesParts.length > 1 ? mesParts[1] : new Date().getFullYear();
                     const nombreMes = mesParts[0] || 'MES';
                     const fileName = `${anio} ${nombreMes} FLASH NEWS ${templateType.toUpperCase()}.pdf`;
 
+                    // Opciones minimalistas: No forzamos scrollX/Y ni widths internos de canvas
+                    // para evitar que html2canvas se confunda con coordenadas negativas.
                     const opt = {
                         margin: 0,
                         filename: fileName,
@@ -693,11 +666,7 @@
                         html2canvas: { 
                             scale: 2, 
                             useCORS: true,
-                            backgroundColor: '#f3f4f6',
-                            width: pdfWidth,
-                            windowWidth: pdfWidth,
-                            scrollY: 0,
-                            scrollX: 0
+                            backgroundColor: '#f3f4f6'
                         },
                         jsPDF: { 
                             unit: 'px', 
@@ -706,11 +675,10 @@
                         }
                     };
 
-                    // Capturamos el body del iframe aislado
-                    await window.html2pdf().set(opt).from(iframeDoc.body).save();
+                    await window.html2pdf().set(opt).from(tempDiv).save();
 
-                    // 5. Limpiar
-                    document.body.removeChild(printIframe);
+                    // Limpieza
+                    document.body.removeChild(tempDiv);
 
                 } catch (error) {
                     console.error("Error al generar PDF:", error);
