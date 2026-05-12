@@ -627,6 +627,12 @@
                     const originalMaxWidth = iframeContainer.style.maxWidth;
                     const originalWidth = iframeContainer.style.width;
                     const originalHeight = iframeContainer.style.height;
+                    const originalOverflow = iframeContainer.style.overflow;
+                    const originalPosition = iframeContainer.style.position;
+                    const originalTop = iframeContainer.style.top;
+                    const originalLeft = iframeContainer.style.left;
+                    const originalZIndex = iframeContainer.style.zIndex;
+                    const originalMargin = iframeContainer.style.margin;
                     const originalIframeWidth = iframe.style.width;
                     const originalIframeHeight = iframe.style.height;
 
@@ -634,7 +640,13 @@
                     const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
                     const pdfWidth = 768; // Ancho óptimo del correo
                     
-                    // Expandir temporalmente para que html2canvas capture todo sin recortes
+                    // Expandir temporalmente y anclar a la esquina superior izquierda (para evitar que margin auto lo empuje a coordenadas negativas)
+                    iframeContainer.style.position = 'fixed';
+                    iframeContainer.style.top = '0';
+                    iframeContainer.style.left = '0';
+                    iframeContainer.style.margin = '0';
+                    iframeContainer.style.zIndex = '9999';
+                    iframeContainer.style.overflow = 'visible';
                     iframeContainer.style.maxWidth = 'none';
                     iframeContainer.style.width = pdfWidth + 'px';
                     iframeContainer.style.height = scrollHeight + 'px';
@@ -642,7 +654,7 @@
                     iframe.style.height = scrollHeight + 'px';
 
                     // Esperar a que el DOM aplique los cambios
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await new Promise(resolve => setTimeout(resolve, 500));
 
                     // Recalcular por si cambió al ajustar el ancho
                     const finalHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
@@ -664,7 +676,8 @@
                             backgroundColor: '#f3f4f6',
                             width: pdfWidth,
                             windowWidth: pdfWidth,
-                            scrollY: 0
+                            scrollY: 0,
+                            scrollX: 0
                         },
                         jsPDF: { 
                             unit: 'px', 
@@ -676,6 +689,12 @@
                     await window.html2pdf().set(opt).from(element).save();
 
                     // Restaurar estilos originales
+                    iframeContainer.style.position = originalPosition;
+                    iframeContainer.style.top = originalTop;
+                    iframeContainer.style.left = originalLeft;
+                    iframeContainer.style.margin = originalMargin;
+                    iframeContainer.style.zIndex = originalZIndex;
+                    iframeContainer.style.overflow = originalOverflow;
                     iframeContainer.style.maxWidth = originalMaxWidth;
                     iframeContainer.style.width = originalWidth;
                     iframeContainer.style.height = originalHeight;
