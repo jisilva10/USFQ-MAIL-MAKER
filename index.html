@@ -613,50 +613,31 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    // 1. Extraer el HTML puro
-                    const htmlString = generateHTML();
-                    const bodyMatch = htmlString.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-                    if (!bodyMatch) {
-                        alert("Error al extraer el contenido para el PDF.");
+                    const iframeDoc = iframeRef.current?.contentWindow?.document;
+                    if (!iframeDoc || !iframeDoc.body) {
+                        alert("Error al acceder a la vista previa.");
                         setIsDownloadingPDF(false);
                         return;
                     }
 
-                    // 2. Crear un contenedor limpio y aislado
-                    const tempDiv = document.createElement('div');
-                    tempDiv.style.width = '768px';
-                    tempDiv.style.position = 'absolute';
-                    tempDiv.style.left = '0'; 
-                    tempDiv.style.top = '0';
-                    tempDiv.style.zIndex = '-9999'; // Oculto detrás de la app
-                    tempDiv.style.backgroundColor = '#f3f4f6';
-                    tempDiv.style.padding = '32px 0'; // El padding original
-                    tempDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
-                    tempDiv.style.color = '#1f2937';
-                    tempDiv.innerHTML = bodyMatch[1];
-                    
-                    document.body.appendChild(tempDiv);
+                    // 1. Extraer el HTML puro exactamente como lo generamos
+                    const htmlString = generateHTML();
 
-                    // 3. Esperar carga de imágenes
-                    const images = Array.from(tempDiv.getElementsByTagName('img'));
-                    await Promise.all(images.map(img => {
-                        if (img.complete) return Promise.resolve();
-                        return new Promise(resolve => {
-                            img.onload = resolve;
-                            img.onerror = resolve;
-                        });
-                    }));
-
-                    // 4. Calcular dimensiones
+                    // 2. Usar la altura de la vista previa existente
+                    const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
                     const pdfWidth = 768;
-                    const pdfHeight = tempDiv.scrollHeight + 20; 
+                    const pdfHeight = scrollHeight + 20; // 20px de margen inferior para evitar 2da hoja
 
-                    // 5. Nomenclatura
+                    // 3. Formato de nombre
                     const mesParts = mes.trim().split(' ');
                     const anio = mesParts.length > 1 ? mesParts[1] : new Date().getFullYear();
                     const nombreMes = mesParts[0] || 'MES';
                     const fileName = `${anio} ${nombreMes} FLASH NEWS ${templateType.toUpperCase()}.pdf`;
 
+                    // 4. Configuración minimalista: 
+                    // NO FORZAMOS anchos ni coordenadas en html2canvas. 
+                    // Esto permite que tome el ancho natural del contenido y lo escale automáticamente 
+                    // para encajar perfectamente en los 768px del PDF sin cortar los márgenes.
                     const opt = {
                         margin: 0,
                         filename: fileName,
@@ -673,16 +654,9 @@
                         }
                     };
 
-                    // LA CLAVE: Desactivar temporalmente overflow:hidden del body principal
-                    // Esto evita que html2canvas genere un PDF en blanco o cortado.
-                    const originalOverflow = document.body.style.overflow;
-                    document.body.style.overflow = 'visible';
-
-                    await window.html2pdf().set(opt).from(tempDiv).save();
-
-                    // Limpieza y restauración
-                    document.body.style.overflow = originalOverflow;
-                    document.body.removeChild(tempDiv);
+                    // Pasamos el string HTML directamente. html2pdf se encarga de crear
+                    // su propio contexto de renderizado seguro y auto-escalarlo.
+                    await window.html2pdf().set(opt).from(htmlString).save();
 
                 } catch (error) {
                     console.error("Error al generar PDF:", error);
