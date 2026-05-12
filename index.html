@@ -613,7 +613,7 @@
                 setIsDownloadingPDF(true);
                 
                 try {
-                    // 1. Extraer el HTML puro (el interior del body para no afectar el documento actual)
+                    // 1. Extraer el HTML puro
                     const htmlString = generateHTML();
                     const bodyMatch = htmlString.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
                     if (!bodyMatch) {
@@ -647,18 +647,16 @@
                         });
                     }));
 
-                    // 4. Calcular dimensiones naturales
+                    // 4. Calcular dimensiones
                     const pdfWidth = 768;
-                    const pdfHeight = tempDiv.scrollHeight + 20; // +20px para evitar corte de 2da página
+                    const pdfHeight = tempDiv.scrollHeight + 20; 
 
-                    // Nomenclatura
+                    // 5. Nomenclatura
                     const mesParts = mes.trim().split(' ');
                     const anio = mesParts.length > 1 ? mesParts[1] : new Date().getFullYear();
                     const nombreMes = mesParts[0] || 'MES';
                     const fileName = `${anio} ${nombreMes} FLASH NEWS ${templateType.toUpperCase()}.pdf`;
 
-                    // Opciones minimalistas: No forzamos scrollX/Y ni widths internos de canvas
-                    // para evitar que html2canvas se confunda con coordenadas negativas.
                     const opt = {
                         margin: 0,
                         filename: fileName,
@@ -675,9 +673,15 @@
                         }
                     };
 
+                    // LA CLAVE: Desactivar temporalmente overflow:hidden del body principal
+                    // Esto evita que html2canvas genere un PDF en blanco o cortado.
+                    const originalOverflow = document.body.style.overflow;
+                    document.body.style.overflow = 'visible';
+
                     await window.html2pdf().set(opt).from(tempDiv).save();
 
-                    // Limpieza
+                    // Limpieza y restauración
+                    document.body.style.overflow = originalOverflow;
                     document.body.removeChild(tempDiv);
 
                 } catch (error) {
