@@ -623,10 +623,37 @@
                     // 1. Extraer el HTML puro exactamente como lo generamos
                     const htmlString = generateHTML();
 
-                    // 2. Usar la altura de la vista previa existente
-                    const scrollHeight = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
+                    // 2. Crear un iframe oculto de 768px para medir la altura EXACTA del layout de escritorio
+                    const hiddenIframe = document.createElement('iframe');
+                    hiddenIframe.style.width = '768px';
+                    hiddenIframe.style.height = '2000px'; // Altura arbitraria grande para evitar scrollbars
+                    hiddenIframe.style.position = 'absolute';
+                    hiddenIframe.style.top = '-9999px';
+                    hiddenIframe.style.left = '-9999px';
+                    hiddenIframe.style.visibility = 'hidden';
+                    hiddenIframe.style.border = 'none';
+                    hiddenIframe.srcdoc = htmlString;
+                    document.body.appendChild(hiddenIframe);
+
+                    // Esperar a que el iframe cargue el contenido
+                    await new Promise(resolve => {
+                        hiddenIframe.onload = resolve;
+                    });
+                    
+                    // Pausa adicional para fuentes/imágenes (ya en caché)
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                    const hiddenDoc = hiddenIframe.contentWindow.document;
+                    const mainTable = hiddenDoc.querySelector('table');
+                    
+                    // Altura exacta: tabla + 32px padding top + 32px padding bottom + 25px de sombra + 5px extra
+                    const contentHeight = mainTable ? (mainTable.offsetHeight + 94) : (hiddenDoc.body.scrollHeight + 20);
+
                     const pdfWidth = 768;
-                    const pdfHeight = scrollHeight + 20; // 20px de margen inferior para evitar 2da hoja
+                    const pdfHeight = contentHeight;
+
+                    // Limpiar el DOM
+                    document.body.removeChild(hiddenIframe);
 
                     // 3. Formato de nombre
                     const mesParts = mes.trim().split(' ');
@@ -634,10 +661,7 @@
                     const nombreMes = mesParts[0] || 'MES';
                     const fileName = `${anio} ${nombreMes} FLASH NEWS ${templateType.toUpperCase()}.pdf`;
 
-                    // 4. Configuración minimalista: 
-                    // NO FORZAMOS anchos ni coordenadas en html2canvas. 
-                    // Esto permite que tome el ancho natural del contenido y lo escale automáticamente 
-                    // para encajar perfectamente en los 768px del PDF sin cortar los márgenes.
+                    // 4. Configuración:
                     const opt = {
                         margin: 0,
                         filename: fileName,
@@ -645,7 +669,8 @@
                         html2canvas: { 
                             scale: 2, 
                             useCORS: true,
-                            backgroundColor: '#f3f4f6'
+                            backgroundColor: '#f3f4f6',
+                            windowWidth: 768 // Forzar renderizado en modo desktop
                         },
                         jsPDF: { 
                             unit: 'px', 
