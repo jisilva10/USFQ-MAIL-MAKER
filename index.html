@@ -92,7 +92,20 @@
         const getInitialTarjetas = (key) => {
             const saved = localStorage.getItem(key);
             if (saved) {
-                try { return JSON.parse(saved); } catch (e) { return initialCards; }
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed)) {
+                        return parsed.map(card => {
+                            if (card.ctaTexto === 'Inscribir') {
+                                return { ...card, ctaTexto: 'Inscríbete' };
+                            }
+                            return card;
+                        });
+                    }
+                    return parsed;
+                } catch (e) {
+                    return initialCards;
+                }
             }
             return initialCards;
         };
