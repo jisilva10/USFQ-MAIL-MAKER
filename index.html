@@ -85,11 +85,38 @@
             return `${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
         };
 
-        const getInitialMes = () => localStorage.getItem('usfq_mes') || getMesAnioActual();
-        const getInitialHeroImage = () => localStorage.getItem('usfq_heroImage') || '';
-        const getInitialTemplate = () => localStorage.getItem('usfq_template') || 'ce';
-        const getInitialLinkRed = () => localStorage.getItem('usfq_linkRed') || 'https://www.usfq.edu.ec/es/contacto/contacto-empresarial/beneficios-vip';
-        const getInitialTarjetas = (key) => {
+        const getInitialStateFromHash = () => {
+            const hash = window.location.hash;
+            if (hash.startsWith('#config=')) {
+                try {
+                    const base64 = hash.replace('#config=', '');
+                    const json = decodeURIComponent(atob(base64));
+                    window.history.replaceState(null, null, window.location.pathname);
+                    return JSON.parse(json);
+                } catch (e) {
+                    console.error("Error parsing config from URL", e);
+                    return null;
+                }
+            }
+            return null;
+        };
+
+        const sharedConfig = getInitialStateFromHash();
+
+        const getInitialMes = () => {
+            if (sharedConfig && sharedConfig.m) return sharedConfig.m;
+            return localStorage.getItem('usfq_mes') || getMesAnioActual();
+        };
+        const getInitialHeroImage = () => {
+            if (sharedConfig && sharedConfig.h !== undefined) return sharedConfig.h;
+            return localStorage.getItem('usfq_heroImage') || '';
+        };
+        const getInitialTemplate = () => {
+            if (sharedConfig && sharedConfig.t) return sharedConfig.t;
+            return localStorage.getItem('usfq_template') || 'ce';
+        };
+        const getInitialTarjetas = (key, sharedKey) => {
+            if (sharedConfig && sharedConfig[sharedKey]) return sharedConfig[sharedKey];
             const saved = localStorage.getItem(key);
             if (saved) {
                 try {
@@ -111,6 +138,7 @@
         };
 
         const getInitialOverrideTexts = () => {
+            if (sharedConfig && sharedConfig.o) return sharedConfig.o;
             const saved = localStorage.getItem('usfq_overrideTexts');
             return saved ? JSON.parse(saved) : {};
         };
@@ -120,14 +148,15 @@
             const [templateType, setTemplateType] = useState(getInitialTemplate);
             const [mes, setMes] = useState(getInitialMes);
             const [heroImage, setHeroImage] = useState(getInitialHeroImage);
-            const [tarjetasCE, setTarjetasCE] = useState(() => getInitialTarjetas('usfq_tarjetas_ce'));
-            const [tarjetasAlumni, setTarjetasAlumni] = useState(() => getInitialTarjetas('usfq_tarjetas_alumni'));
+            const [tarjetasCE, setTarjetasCE] = useState(() => getInitialTarjetas('usfq_tarjetas_ce', 'tCE'));
+            const [tarjetasAlumni, setTarjetasAlumni] = useState(() => getInitialTarjetas('usfq_tarjetas_alumni', 'tA'));
 
             const tarjetas = templateType === 'ce' ? tarjetasCE : tarjetasAlumni;
             const setTarjetas = templateType === 'ce' ? setTarjetasCE : setTarjetasAlumni;
             const [activeAccordion, setActiveAccordion] = useState(0);
             const [isMobilePreview, setIsMobilePreview] = useState(false);
             const [isCopied, setIsCopied] = useState(false);
+            const [isLinkCopied, setIsLinkCopied] = useState(false);
             const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
             const [validationErrors, setValidationErrors] = useState([]);
             const [isModalOpen, setIsModalOpen] = useState(false);
@@ -630,6 +659,28 @@
                 return templateType === 'ce' ? generateCEHTML(isExport) : generateAlumniHTML(isExport);
             };
 
+            const generateShareLink = () => {
+                const config = {
+                    t: templateType,
+                    m: mes,
+                    h: heroImage,
+                    tCE: tarjetasCE,
+                    tA: tarjetasAlumni,
+                    o: overrideTextsRef.current
+                };
+                try {
+                    const base64Config = btoa(encodeURIComponent(JSON.stringify(config)));
+                    const shareUrl = `${window.location.origin}${window.location.pathname}#config=${base64Config}`;
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        setIsLinkCopied(true);
+                        setTimeout(() => setIsLinkCopied(false), 2000);
+                    });
+                } catch (e) {
+                    console.error("Error generating share link", e);
+                    alert("Error al generar el link. El contenido podría ser demasiado grande.");
+                }
+            };
+
             const forceExportHTML = () => {
                 setIsModalOpen(false);
                 const html = generateHTML(true);
@@ -809,6 +860,16 @@
                             <a href="https://us11.admin.mailchimp.com/?ref=plums_nav" target="_blank" rel="noreferrer" className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-bold transition-colors flex items-center shadow-md">
                                 <i className="fas fa-mail-bulk mr-2"></i> Mailchimp
                             </a>
+                            <button 
+                                onClick={generateShareLink} 
+                                className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-colors flex items-center ${isLinkCopied ? 'bg-purple-500 hover:bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
+                            >
+                                {isLinkCopied ? (
+                                    <><i className="fas fa-check mr-2"></i> ¡Link Copiado!</>
+                                ) : (
+                                    <><i className="fas fa-link mr-2"></i> Compartir Link</>
+                                )}
+                            </button>
                             <button 
                                 onClick={downloadPDF} 
                                 disabled={isDownloadingPDF}
