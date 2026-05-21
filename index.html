@@ -156,7 +156,17 @@
             };
             initialProjects.push(importProject);
             initialActiveId = importProject.id;
+            
+            // Limpiar el hash de la URL para que si pegan otro link en la misma pestaña funcione
+            window.location.hash = '';
         }
+
+        // Si pegan un link con hash estando la app abierta, forzar recarga
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash.startsWith('#config=')) {
+                window.location.reload();
+            }
+        });
 
         if (initialProjects.length === 0) {
             const defaultProject = {
@@ -783,12 +793,10 @@
                     t: templateType,
                     m: mes,
                     h: heroImage,
+                    tCE: tarjetasCE,
+                    tA: tarjetasAlumni,
                     o: overrideTextsRef.current
                 };
-                
-                // Optimización: Solo guardar las tarjetas de la plantilla activa para ahorrar espacio
-                if (templateType === 'ce') config.tCE = tarjetasCE;
-                if (templateType === 'alumni') config.tA = tarjetasAlumni;
 
                 try {
                     const jsonString = JSON.stringify(config);
