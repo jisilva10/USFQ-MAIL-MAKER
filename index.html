@@ -110,7 +110,13 @@
             return initialCards;
         };
 
+        const getInitialOverrideTexts = () => {
+            const saved = localStorage.getItem('usfq_overrideTexts');
+            return saved ? JSON.parse(saved) : {};
+        };
+
         function App() {
+            const overrideTextsRef = useRef(getInitialOverrideTexts());
             const [templateType, setTemplateType] = useState(getInitialTemplate);
             const [mes, setMes] = useState(getInitialMes);
             const [heroImage, setHeroImage] = useState(getInitialHeroImage);
@@ -149,8 +155,30 @@
             useEffect(() => { localStorage.setItem('usfq_tarjetas_alumni', JSON.stringify(tarjetasAlumni)); }, [tarjetasAlumni]);
             useEffect(() => { localStorage.setItem('usfq_template', templateType); }, [templateType]);
 
+            useEffect(() => {
+                const handleMessage = (event) => {
+                    if (event.data && event.data.type === 'TEXT_UPDATE') {
+                        const { id, text } = event.data;
+                        if (id.startsWith('card-')) {
+                            const parts = id.split('-');
+                            const field = parts[1];
+                            const cardId = parseInt(parts[2]);
+                            setTarjetasCE(prev => prev.map(t => t.id === cardId ? { ...t, [field]: text } : t));
+                            setTarjetasAlumni(prev => prev.map(t => t.id === cardId ? { ...t, [field]: text } : t));
+                        } else {
+                            overrideTextsRef.current[id] = text;
+                            localStorage.setItem('usfq_overrideTexts', JSON.stringify(overrideTextsRef.current));
+                        }
+                    }
+                };
+                window.addEventListener('message', handleMessage);
+                return () => window.removeEventListener('message', handleMessage);
+            }, []);
+
             const handleReset = () => {
                 // Conservamos el mes actual para no perder el progreso del periodo de trabajo
+                overrideTextsRef.current = {};
+                localStorage.removeItem('usfq_overrideTexts');
                 if (templateType === 'ce') {
                     setHeroImage('');
                     setTarjetasCE(initialCards);
@@ -275,7 +303,25 @@
                 setActiveAccordion(newId);
             };
 
-            const generateCEHTML = () => {
+            const generateCEHTML = (isExport = false) => {
+                const editableAttr = (id) => isExport ? '' : `contenteditable="true" data-editable-id="${id}" style="outline: none; cursor: text;"`;
+                const getText = (id, defaultText) => overrideTextsRef.current[id] ?? defaultText;
+                
+                const scriptTag = isExport ? '' : `
+                <script>
+                    document.addEventListener('focusout', function(e) {
+                        if (e.target.hasAttribute('contenteditable')) {
+                            const id = e.target.getAttribute('data-editable-id');
+                            window.parent.postMessage({ type: 'TEXT_UPDATE', id: id, text: e.target.innerHTML }, '*');
+                        }
+                    });
+                    document.addEventListener('click', function(e) {
+                        if (e.target.hasAttribute('contenteditable') || e.target.closest('[contenteditable]')) {
+                            e.preventDefault();
+                        }
+                    });
+                </script>
+                `;
 
                 let tarjetasHTML = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 100%;"><tbody>';
                 for (let i = 0; i < tarjetas.length; i += 2) {
@@ -290,12 +336,12 @@
                                 <img src="${t1.imagen || defaultCardImage}" alt="Arte" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
                             </a>
                             <div class="p-5" style="padding: 20px;">
-                                ${t1.categoria ? `<div class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t1.categoria}</div>` : ''}
-                                ${t1.titulo ? `<h4 class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t1.titulo}</h4>` : ''}
-                                ${t1.descripcion ? `<p class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t1.descripcion}</p>` : ''}
+                                ${t1.categoria ? `<div ${editableAttr(`card-categoria-${t1.id}`)} class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t1.categoria}</div>` : ''}
+                                ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t1.titulo}</h4>` : ''}
+                                ${t1.descripcion ? `<p ${editableAttr(`card-descripcion-${t1.id}`)} class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t1.descripcion}</p>` : ''}
                                 
                                 <a href="${t1.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
-                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t1.ctaIcono)}</span> ${t1.ctaTexto || 'Me Interesa'}
+                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t1.ctaIcono)}</span> <span ${editableAttr(`card-ctaTexto-${t1.id}`)}>${t1.ctaTexto || 'Me Interesa'}</span>
                                 </a>
                             </div>
                         </div>
@@ -310,12 +356,12 @@
                                 <img src="${t2.imagen || defaultCardImage}" alt="Arte" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
                             </a>
                             <div class="p-5" style="padding: 20px;">
-                                ${t2.categoria ? `<div class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t2.categoria}</div>` : ''}
-                                ${t2.titulo ? `<h4 class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t2.titulo}</h4>` : ''}
-                                ${t2.descripcion ? `<p class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t2.descripcion}</p>` : ''}
+                                ${t2.categoria ? `<div ${editableAttr(`card-categoria-${t2.id}`)} class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t2.categoria}</div>` : ''}
+                                ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} class="text-gray-800 leading-tight" style="color: #1f2937; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t2.titulo}</h4>` : ''}
+                                ${t2.descripcion ? `<p ${editableAttr(`card-descripcion-${t2.id}`)} class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t2.descripcion}</p>` : ''}
                                 
                                 <a href="${t2.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
-                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t2.ctaIcono)}</span> ${t2.ctaTexto || 'Me Interesa'}
+                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t2.ctaIcono)}</span> <span ${editableAttr(`card-ctaTexto-${t2.id}`)}>${t2.ctaTexto || 'Me Interesa'}</span>
                                 </a>
                             </div>
                         </div>
@@ -351,8 +397,8 @@
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #e11b22; color: #ffffff;">
             <tr class="mobile-stack">
                 <td class="mobile-stack mobile-pad" style="padding: 24px 32px; text-align: left; box-sizing: border-box;" valign="middle">
-                    <h1 style="font-size: 24px; font-weight: bold; margin: 0; letter-spacing: 1px;">FLASH NEWS</h1>
-                    <p style="font-size: 14px; font-weight: bold; margin: 4px 0 0 0; letter-spacing: 2px; text-transform: uppercase;">Aliados VIP CE</p>
+                    <h1 ${editableAttr('ce-h1')} style="font-size: 24px; font-weight: bold; margin: 0; letter-spacing: 1px;">${getText('ce-h1', 'FLASH NEWS')}</h1>
+                    <p ${editableAttr('ce-p1')} style="font-size: 14px; font-weight: bold; margin: 4px 0 0 0; letter-spacing: 2px; text-transform: uppercase;">${getText('ce-p1', 'Aliados VIP CE')}</p>
                 </td>
                 <td class="mobile-stack mobile-pad-bottom" style="padding: 24px 32px; text-align: right; box-sizing: border-box;" valign="middle">
                     <span style="background-color: #ffffff; color: #e11b22; padding: 6px 16px; border-radius: 9999px; font-size: 14px; font-weight: bold; display: inline-block;">
@@ -366,13 +412,13 @@
         <div>
             <img src="${heroImage || defaultHeroImage}" alt="Portada" width="768" border="0" style="width: 100%; max-width: 768px; height: auto; display: block; margin: 0 auto;">
             <div class="bg-usfq-dark" style="background-color: #1a1a1a; padding: 32px; text-align: center; color: #ffffff;">
-                <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 8px; margin-top: 0;">¡Nuevas Oportunidades este Mes!</h2>
-                <p style="font-size: 14px; color: #e5e7eb; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto; margin-top: 0;">
-                    Descubre los beneficios y descuentos exclusivos diseñados especialmente para ti y tu equipo. Aprovecha al máximo tu membresía y comparte estas increíbles oportunidades.
+                <h2 ${editableAttr('ce-h2')} style="font-size: 24px; font-weight: bold; margin-bottom: 8px; margin-top: 0;">${getText('ce-h2', '¡Nuevas Oportunidades este Mes!')}</h2>
+                <p ${editableAttr('ce-p2')} style="font-size: 14px; color: #e5e7eb; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto; margin-top: 0;">
+                    ${getText('ce-p2', 'Descubre los beneficios y descuentos exclusivos diseñados especialmente para ti y tu equipo. Aprovecha al máximo tu membresía y comparte estas increíbles oportunidades.')}
                 </p>
                 <div style="text-align: center;">
                     <a href="https://www.usfq.edu.ec/es/contacto/contacto-empresarial/beneficios-vip" target="_blank" class="bg-usfq-red" style="display: inline-block; background-color: #e11b22; color: #ffffff; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px;">
-                        <span style="margin-right: 8px; font-size: 16px;">🎁</span> Lista completa de beneficios
+                        <span style="margin-right: 8px; font-size: 16px;">🎁</span> <span ${editableAttr('ce-btn1')}>${getText('ce-btn1', 'Lista completa de beneficios')}</span>
                     </a>
                 </div>
             </div>
@@ -384,8 +430,8 @@
                     <td width="40" valign="top" style="padding: 20px 0 20px 20px; font-size: 24px; text-align: center;">
                         💳
                     </td>
-                    <td valign="top" style="padding: 20px 20px 20px 10px; font-size: 14px; color: #1a1a1a; line-height: 1.5;">
-                        <strong>Recuerda:</strong> Para acceder a cualquier beneficio, debes presentar tu credencial de la empresa junto con tu credencial digital de Aliado VIP CE.
+                    <td ${editableAttr('ce-recuerda')} valign="top" style="padding: 20px 20px 20px 10px; font-size: 14px; color: #1a1a1a; line-height: 1.5;">
+                        ${getText('ce-recuerda', '<strong>Recuerda:</strong> Para acceder a cualquier beneficio, debes presentar tu credencial de la empresa junto con tu credencial digital de Aliado VIP CE.')}
                     </td>
                 </tr>
             </table>
@@ -398,26 +444,45 @@
 
         <!-- FOOTER -->
         <div style="background-color: #1a1a1a; color: #9ca3af; padding: 32px; text-align: center; font-size: 14px;">
-            <h5 style="margin-top: 0; margin-bottom: 8px; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">USFQ PATH</h5>
-            <p style="margin: 0 0 8px 0;">Casa Tomate 301</p>
-            <p style="margin: 0 0 16px 0;"><a href="mailto:gestionalumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">gestionalumni@usfq.edu.ec</a></p>
+            <h5 ${editableAttr('ce-footer1')} style="margin-top: 0; margin-bottom: 8px; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">${getText('ce-footer1', 'USFQ PATH')}</h5>
+            <p ${editableAttr('ce-footer2')} style="margin: 0 0 8px 0;">${getText('ce-footer2', 'Casa Tomate 301')}</p>
+            <p style="margin: 0 0 16px 0;"><a ${editableAttr('ce-footer3')} href="mailto:gestionalumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">${getText('ce-footer3', 'gestionalumni@usfq.edu.ec')}</a></p>
             <div style="text-align: center; margin-top: 10px;">
                 <a href="https://api.whatsapp.com/send?phone=593999044984" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; margin-bottom: 15px;">
-                    <span style="margin-right: 8px;">📱</span> WhatsApp: +593 99 904 4984
+                    <span style="margin-right: 8px;">📱</span> <span ${editableAttr('ce-footer4')}>${getText('ce-footer4', 'WhatsApp: +593 99 904 4984')}</span>
                 </a>
-                <p style="margin: 0; color: #9ca3af;">Universidad San Francisco de Quito</p>
+                <p ${editableAttr('ce-footer5')} style="margin: 0; color: #9ca3af;">${getText('ce-footer5', 'Universidad San Francisco de Quito')}</p>
             </div>
         </div>
 
             </td>
         </tr>
     </table>
-
+    ${scriptTag}
 </body>
 </html>`;
             };
 
-            const generateAlumniHTML = () => {
+            const generateAlumniHTML = (isExport = false) => {
+                const editableAttr = (id) => isExport ? '' : `contenteditable="true" data-editable-id="${id}" style="outline: none; cursor: text;"`;
+                const getText = (id, defaultText) => overrideTextsRef.current[id] ?? defaultText;
+                
+                const scriptTag = isExport ? '' : `
+                <script>
+                    document.addEventListener('focusout', function(e) {
+                        if (e.target.hasAttribute('contenteditable')) {
+                            const id = e.target.getAttribute('data-editable-id');
+                            window.parent.postMessage({ type: 'TEXT_UPDATE', id: id, text: e.target.innerHTML }, '*');
+                        }
+                    });
+                    document.addEventListener('click', function(e) {
+                        if (e.target.hasAttribute('contenteditable') || e.target.closest('[contenteditable]')) {
+                            e.preventDefault();
+                        }
+                    });
+                </script>
+                `;
+
                 let tarjetasHTML = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 100%;"><tbody>';
                 for (let i = 0; i < tarjetas.length; i += 2) {
                     const t1 = tarjetas[i];
@@ -433,14 +498,14 @@
                             <a href="${t1.linkGrande || '#'}" target="_blank" style="display: block; position: relative; width: 100%; overflow: hidden; text-decoration: none; background-color: #f3f4f6;">
                                 <img src="${t1.imagen || defaultCardImage}" alt="Beneficio" style="width: 100%; height: auto; display: block; border: 0;">
                                 <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 20px 20px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4), transparent); display: flex; flex-direction: column; justify-content: flex-end;">
-                                    ${t1.categoria ? `<span style="color: #e11b22; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">${t1.categoria}</span>` : ''}
-                                    ${t1.titulo ? `<h4 style="font-weight: bold; color: #ffffff; font-size: 18px; line-height: 1.25; margin: 0;">${t1.titulo}</h4>` : ''}
+                                    ${t1.categoria ? `<span ${editableAttr(`card-categoria-${t1.id}`)} style="color: #e11b22; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">${t1.categoria}</span>` : ''}
+                                    ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} style="font-weight: bold; color: #ffffff; font-size: 18px; line-height: 1.25; margin: 0;">${t1.titulo}</h4>` : ''}
                                 </div>
                             </a>
                             <div style="padding: 24px; display: block; background-color: #ffffff;">
-                                ${t1.descripcion ? `<p style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t1.descripcion}</p>` : ''}
+                                ${t1.descripcion ? `<p ${editableAttr(`card-descripcion-${t1.id}`)} style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t1.descripcion}</p>` : ''}
                                 <a href="${t1.ctaLink || '#'}" style="display: block; width: 100%; text-align: center; border: 2px solid #111111; color: #111111; text-decoration: none; font-weight: bold; padding: 10px 16px; border-radius: 8px; box-sizing: border-box;">
-                                    <span style="margin-right: 8px;">${getEmoji(t1.ctaIcono)}</span> ${t1.ctaTexto || 'Me Interesa'}
+                                    <span style="margin-right: 8px;">${getEmoji(t1.ctaIcono)}</span> <span ${editableAttr(`card-ctaTexto-${t1.id}`)}>${t1.ctaTexto || 'Me Interesa'}</span>
                                 </a>
                             </div>
                         </div>
@@ -457,14 +522,14 @@
                             <a href="${t2.linkGrande || '#'}" target="_blank" style="display: block; position: relative; width: 100%; overflow: hidden; text-decoration: none; background-color: #f3f4f6;">
                                 <img src="${t2.imagen || defaultCardImage}" alt="Beneficio" style="width: 100%; height: auto; display: block; border: 0;">
                                 <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 20px 20px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4), transparent); display: flex; flex-direction: column; justify-content: flex-end;">
-                                    ${t2.categoria ? `<span style="color: #e11b22; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">${t2.categoria}</span>` : ''}
-                                    ${t2.titulo ? `<h4 style="font-weight: bold; color: #ffffff; font-size: 18px; line-height: 1.25; margin: 0;">${t2.titulo}</h4>` : ''}
+                                    ${t2.categoria ? `<span ${editableAttr(`card-categoria-${t2.id}`)} style="color: #e11b22; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">${t2.categoria}</span>` : ''}
+                                    ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} style="font-weight: bold; color: #ffffff; font-size: 18px; line-height: 1.25; margin: 0;">${t2.titulo}</h4>` : ''}
                                 </div>
                             </a>
                             <div style="padding: 24px; display: block; background-color: #ffffff;">
-                                ${t2.descripcion ? `<p style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t2.descripcion}</p>` : ''}
+                                ${t2.descripcion ? `<p ${editableAttr(`card-descripcion-${t2.id}`)} style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t2.descripcion}</p>` : ''}
                                 <a href="${t2.ctaLink || '#'}" style="display: block; width: 100%; text-align: center; border: 2px solid #111111; color: #111111; text-decoration: none; font-weight: bold; padding: 10px 16px; border-radius: 8px; box-sizing: border-box;">
-                                    <span style="margin-right: 8px;">${getEmoji(t2.ctaIcono)}</span> ${t2.ctaTexto || 'Me Interesa'}
+                                    <span style="margin-right: 8px;">${getEmoji(t2.ctaIcono)}</span> <span ${editableAttr(`card-ctaTexto-${t2.id}`)}>${t2.ctaTexto || 'Me Interesa'}</span>
                                 </a>
                             </div>
                         </div>
@@ -507,26 +572,26 @@
 
                 <!-- SECCIÓN DE BIENVENIDA Y BOTÓN -->
                 <div class="mobile-pad" style="background-color: #ffffff; padding: 40px 32px; text-align: center; border-bottom: 4px solid #f3f4f6;">
-                    <h2 style="font-size: 24px; font-weight: bold; color: #111111; margin: 0 0 16px 0;">Hola, comunidad USFQ</h2>
-                    <p style="color: #4b5563; font-size: 16px; max-width: 600px; margin: 0 auto 24px auto; line-height: 1.625;">
-                        Queremos asegurarnos de que estén al tanto de los descuentos exclusivos que su Plan VIP les ofrece, comparte con tus colaboradores la información o el link que se encuentra en el botón de abajo.
+                    <h2 ${editableAttr('al-h1')} style="font-size: 24px; font-weight: bold; color: #111111; margin: 0 0 16px 0;">${getText('al-h1', 'Hola, comunidad USFQ')}</h2>
+                    <p ${editableAttr('al-p1')} style="color: #4b5563; font-size: 16px; max-width: 600px; margin: 0 auto 24px auto; line-height: 1.625;">
+                        ${getText('al-p1', 'Queremos asegurarnos de que estén al tanto de los descuentos exclusivos que su Plan VIP les ofrece, comparte con tus colaboradores la información o el link que se encuentra en el botón de abajo.')}
                     </p>
                     
                     <a href="https://www.usfq.edu.ec/es/contacto/contacto-empresarial/beneficios-vip" target="_blank" style="display: inline-block; background-color: #e11b22; color: #ffffff; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(225, 27, 34, 0.3);">
-                        <span style="margin-right: 8px;">🌐</span> Red Empresarial
+                        <span style="margin-right: 8px;">🌐</span> <span ${editableAttr('al-btn1')}>${getText('al-btn1', 'Red Empresarial')}</span>
                     </a>
                 </div>
 
                 <div style="background-color: #f9fafb; padding: 16px 32px; text-align: center;">
-                    <p style="font-size: 12px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin: 0;">
-                        *Recuerda que para acceder a cualquier beneficio debes presentar tu carnet USFQ*
+                    <p ${editableAttr('al-p2')} style="font-size: 12px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin: 0;">
+                        ${getText('al-p2', '*Recuerda que para acceder a cualquier beneficio debes presentar tu carnet USFQ*')}
                     </p>
                 </div>
 
                 <!-- TARJETAS -->
                 <div class="mobile-pad" style="padding: 40px 32px; background-color: #f9f9f9;">
                     <div style="text-align: center; margin-bottom: 40px;">
-                        <h3 style="font-size: 30px; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: -1px; margin: 0;">Red de Beneficios</h3>
+                        <h3 ${editableAttr('al-h2')} style="font-size: 30px; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: -1px; margin: 0;">${getText('al-h2', 'Red de Beneficios')}</h3>
                         <div style="width: 64px; height: 4px; background-color: #e11b22; margin: 16px auto 0 auto; border-radius: 9999px;"></div>
                     </div>
 
@@ -536,38 +601,38 @@
 
                 <!-- SECCIÓN FINAL: LISTA DE BENEFICIOS -->
                 <div class="mobile-pad" style="background-color: #ffffff; padding: 40px 32px; text-align: center;">
-                    <p style="color: #4b5563; font-size: 16px; max-width: 600px; margin: 0 auto 24px auto; line-height: 1.625;">
-                        Queremos asegurarnos de que nuestros Alumnis USFQ conozcan la lista de beneficios exclusivos que tienen a su disposición. Comparte con tus colaboradores la información o el link que encontrarás en el botón de abajo.
+                    <p ${editableAttr('al-p3')} style="color: #4b5563; font-size: 16px; max-width: 600px; margin: 0 auto 24px auto; line-height: 1.625;">
+                        ${getText('al-p3', 'Queremos asegurarnos de que nuestros Alumnis USFQ conozcan la lista de beneficios exclusivos que tienen a su disposición. Comparte con tus colaboradores la información o el link que encontrarás en el botón de abajo.')}
                     </p>
                     
                     <a href="https://sites.google.com/view/redbeneficiosusfq/sierra#h.9q5yasypz4sg" target="_blank" style="display: inline-block; background-color: #111111; color: #ffffff; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);">
-                        <span style="margin-right: 8px;">📋</span> Lista de Beneficios
+                        <span style="margin-right: 8px;">📋</span> <span ${editableAttr('al-btn2')}>${getText('al-btn2', 'Lista de Beneficios')}</span>
                     </a>
                 </div>
 
                 <!-- FOOTER ALUMNI -->
                 <div class="mobile-pad" style="background-color: #111111; color: #9ca3af; padding: 40px 32px; text-align: center; font-size: 14px; border-top: 4px solid #e11b22;">
-                    <h5 style="margin: 0 0 8px 0; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">USFQ PATH</h5>
-                    <p style="margin: 0 0 8px 0;">Casa Tomate 301</p>
-                    <p style="margin: 0 0 24px 0;"><a href="mailto:alumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">alumni@usfq.edu.ec</a></p>
+                    <h5 ${editableAttr('al-footer1')} style="margin: 0 0 8px 0; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">${getText('al-footer1', 'USFQ PATH')}</h5>
+                    <p ${editableAttr('al-footer2')} style="margin: 0 0 8px 0;">${getText('al-footer2', 'Casa Tomate 301')}</p>
+                    <p style="margin: 0 0 24px 0;"><a ${editableAttr('al-footer3')} href="mailto:alumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">${getText('al-footer3', 'alumni@usfq.edu.ec')}</a></p>
                     
-                    <p style="margin: 0 0 16px 0; font-size: 12px;">Síguenos en nuestras redes sociales y mantente al tanto de todas nuestras noticias.</p>
+                    <p ${editableAttr('al-footer4')} style="margin: 0 0 16px 0; font-size: 12px;">${getText('al-footer4', 'Síguenos en nuestras redes sociales y mantente al tanto de todas nuestras noticias.')}</p>
                 </div>
             </td>
         </tr>
     </table>
-
+    ${scriptTag}
 </body>
 </html>`;
             };
 
-            const generateHTML = () => {
-                return templateType === 'ce' ? generateCEHTML() : generateAlumniHTML();
+            const generateHTML = (isExport = false) => {
+                return templateType === 'ce' ? generateCEHTML(isExport) : generateAlumniHTML(isExport);
             };
 
             const forceExportHTML = () => {
                 setIsModalOpen(false);
-                const html = generateHTML();
+                const html = generateHTML(true);
                 navigator.clipboard.writeText(html).then(() => {
                     setIsCopied(true);
                     setTimeout(() => setIsCopied(false), 2000);
@@ -642,7 +707,7 @@
                     }
 
                     // 1. Extraer el HTML puro exactamente como lo generamos
-                    const htmlString = generateHTML();
+                    const htmlString = generateHTML(true);
 
                     // 2. Crear un iframe oculto de 768px para medir la altura EXACTA del layout de escritorio
                     const hiddenIframe = document.createElement('iframe');
@@ -1021,7 +1086,7 @@
                             <div style={{ maxWidth: isMobilePreview ? '375px' : '100%', margin: '0 auto', transition: 'max-width 0.3s ease', height: 'calc(100vh - 120px)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
                                 <iframe 
                                     ref={iframeRef}
-                                    srcDoc={generateHTML()} 
+                                    srcDoc={generateHTML(false)} 
                                     onLoad={handleIframeLoad}
                                     style={{ width: '100%', height: '100%', border: 'none' }}
                                     title="Preview"
