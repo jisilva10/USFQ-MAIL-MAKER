@@ -803,13 +803,35 @@
                     const compressedConfig = window.LZString ? window.LZString.compressToEncodedURIComponent(jsonString) : btoa(encodeURIComponent(jsonString));
                     const shareUrl = `${window.location.origin}${window.location.pathname}#config=${compressedConfig}`;
                     
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        setIsLinkCopied(true);
-                        setTimeout(() => setIsLinkCopied(false), 2000);
-                    }).catch(err => {
-                        console.error("Clipboard write error:", err);
-                        alert("No se pudo copiar automáticamente. Por favor da permisos a tu navegador.");
-                    });
+                    if (window.ClipboardItem) {
+                        const htmlContent = `<a href="${shareUrl}" style="color: #e11b22; font-weight: bold; text-decoration: underline;">Abrir Plantilla en USFQ Email Builder</a>`;
+                        const blobHtml = new Blob([htmlContent], { type: "text/html" });
+                        const blobText = new Blob([shareUrl], { type: "text/plain" });
+                        const data = [new ClipboardItem({
+                            "text/plain": blobText,
+                            "text/html": blobHtml
+                        })];
+                        
+                        navigator.clipboard.write(data).then(() => {
+                            setIsLinkCopied(true);
+                            setTimeout(() => setIsLinkCopied(false), 2000);
+                        }).catch(err => {
+                            console.error("Clipboard write error:", err);
+                            // Fallback
+                            navigator.clipboard.writeText(shareUrl);
+                            setIsLinkCopied(true);
+                            setTimeout(() => setIsLinkCopied(false), 2000);
+                        });
+                    } else {
+                        // Fallback genérico
+                        navigator.clipboard.writeText(shareUrl).then(() => {
+                            setIsLinkCopied(true);
+                            setTimeout(() => setIsLinkCopied(false), 2000);
+                        }).catch(err => {
+                            console.error("Clipboard write error:", err);
+                            alert("No se pudo copiar automáticamente. Por favor da permisos a tu navegador.");
+                        });
+                    }
                 } catch (e) {
                     console.error("Error generating share link", e);
                     alert("Error al generar el link. El contenido podría ser demasiado grande.");
