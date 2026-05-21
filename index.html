@@ -344,10 +344,14 @@
             };
 
             const generateCEHTML = (isExport = false) => {
-                const editableAttr = (id) => isExport ? '' : `contenteditable="true" data-editable-id="${id}" style="outline: none; cursor: text;"`;
+                const editableAttr = (id) => isExport ? '' : `contenteditable="true" data-editable-id="${id}"`;
                 const getText = (id, defaultText) => overrideTextsRef.current[id] ?? defaultText;
                 
                 const scriptTag = isExport ? '' : `
+                <style>
+                    [contenteditable="true"] { outline: none; cursor: text; }
+                    [contenteditable="true"]:hover { outline: 1px dashed #cccccc; }
+                </style>
                 <script>
                     document.addEventListener('focusout', function(e) {
                         if (e.target.hasAttribute('contenteditable')) {
@@ -505,10 +509,14 @@
             };
 
             const generateAlumniHTML = (isExport = false) => {
-                const editableAttr = (id) => isExport ? '' : `contenteditable="true" data-editable-id="${id}" style="outline: none; cursor: text;"`;
+                const editableAttr = (id) => isExport ? '' : `contenteditable="true" data-editable-id="${id}"`;
                 const getText = (id, defaultText) => overrideTextsRef.current[id] ?? defaultText;
                 
                 const scriptTag = isExport ? '' : `
+                <style>
+                    [contenteditable="true"] { outline: none; cursor: text; }
+                    [contenteditable="true"]:hover { outline: 1px dashed #cccccc; }
+                </style>
                 <script>
                     document.addEventListener('focusout', function(e) {
                         if (e.target.hasAttribute('contenteditable')) {
