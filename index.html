@@ -377,7 +377,7 @@
                             </a>
                             <div class="p-5" style="padding: 20px;">
                                 ${t1.categoria ? `<div ${editableAttr(`card-categoria-${t1.id}`)} class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t1.categoria}</div>` : ''}
-                                ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} class="text-usfq-red leading-tight" style="color: #e11b22; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t1.titulo}</h4>` : ''}
+                                ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} class="text-usfq-red leading-tight" style="color: #e11b22 !important; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t1.titulo}</h4>` : ''}
                                 ${t1.descripcion ? `<p ${editableAttr(`card-descripcion-${t1.id}`)} class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t1.descripcion}</p>` : ''}
                                 
                                 <a href="${t1.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
@@ -397,7 +397,7 @@
                             </a>
                             <div class="p-5" style="padding: 20px;">
                                 ${t2.categoria ? `<div ${editableAttr(`card-categoria-${t2.id}`)} class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t2.categoria}</div>` : ''}
-                                ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} class="text-usfq-red leading-tight" style="color: #e11b22; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t2.titulo}</h4>` : ''}
+                                ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} class="text-usfq-red leading-tight" style="color: #e11b22 !important; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t2.titulo}</h4>` : ''}
                                 ${t2.descripcion ? `<p ${editableAttr(`card-descripcion-${t2.id}`)} class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t2.descripcion}</p>` : ''}
                                 
                                 <a href="${t2.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
@@ -541,7 +541,7 @@
                             </a>
                             <div style="padding: 24px; display: block; background-color: #ffffff;">
                                 ${t1.categoria ? `<div ${editableAttr(`card-categoria-${t1.id}`)} style="color: #e11b22; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">${t1.categoria}</div>` : ''}
-                                ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} style="color: #e11b22; font-weight: bold; font-size: 18px; line-height: 1.25; margin-top: 0; margin-bottom: 12px;">${t1.titulo}</h4>` : ''}
+                                ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} style="color: #e11b22 !important; font-weight: bold; font-size: 18px; line-height: 1.25; margin-top: 0; margin-bottom: 12px;">${t1.titulo}</h4>` : ''}
                                 ${t1.descripcion ? `<p ${editableAttr(`card-descripcion-${t1.id}`)} style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t1.descripcion}</p>` : ''}
                                 <a href="${t1.ctaLink || '#'}" target="_blank" style="display: block; width: 100%; text-align: center; border: 2px solid #111111; color: #111111; text-decoration: none; font-weight: bold; padding: 10px 16px; border-radius: 8px; box-sizing: border-box;">
                                     <span style="margin-right: 8px;">${getEmoji(t1.ctaIcono)}</span> <span>${t1.ctaTexto || 'Me Interesa'}</span>
@@ -563,7 +563,7 @@
                             </a>
                             <div style="padding: 24px; display: block; background-color: #ffffff;">
                                 ${t2.categoria ? `<div ${editableAttr(`card-categoria-${t2.id}`)} style="color: #e11b22; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">${t2.categoria}</div>` : ''}
-                                ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} style="color: #e11b22; font-weight: bold; font-size: 18px; line-height: 1.25; margin-top: 0; margin-bottom: 12px;">${t2.titulo}</h4>` : ''}
+                                ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} style="color: #e11b22 !important; font-weight: bold; font-size: 18px; line-height: 1.25; margin-top: 0; margin-bottom: 12px;">${t2.titulo}</h4>` : ''}
                                 ${t2.descripcion ? `<p ${editableAttr(`card-descripcion-${t2.id}`)} style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t2.descripcion}</p>` : ''}
                                 <a href="${t2.ctaLink || '#'}" target="_blank" style="display: block; width: 100%; text-align: center; border: 2px solid #111111; color: #111111; text-decoration: none; font-weight: bold; padding: 10px 16px; border-radius: 8px; box-sizing: border-box;">
                                     <span style="margin-right: 8px;">${getEmoji(t2.ctaIcono)}</span> <span>${t2.ctaTexto || 'Me Interesa'}</span>
