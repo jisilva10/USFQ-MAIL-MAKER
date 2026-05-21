@@ -214,7 +214,6 @@
             const [isMobilePreview, setIsMobilePreview] = useState(false);
             const [isCopied, setIsCopied] = useState(false);
             const [isLinkCopied, setIsLinkCopied] = useState(false);
-            const [isGeneratingLink, setIsGeneratingLink] = useState(false);
             const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
             const [validationErrors, setValidationErrors] = useState([]);
             const [isModalOpen, setIsModalOpen] = useState(false);
@@ -779,10 +778,7 @@
                 return templateType === 'ce' ? generateCEHTML(isExport) : generateAlumniHTML(isExport);
             };
 
-            const generateShareLink = async () => {
-                if (isGeneratingLink) return;
-                setIsGeneratingLink(true);
-                
+            const generateShareLink = () => {
                 const config = {
                     t: templateType,
                     m: mes,
@@ -799,26 +795,16 @@
                     const compressedConfig = window.LZString ? window.LZString.compressToEncodedURIComponent(jsonString) : btoa(encodeURIComponent(jsonString));
                     const shareUrl = `${window.location.origin}${window.location.pathname}#config=${compressedConfig}`;
                     
-                    let finalUrl = shareUrl;
-                    
-                    try {
-                        const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(shareUrl)}`);
-                        const data = await response.json();
-                        if (data.shorturl) {
-                            finalUrl = data.shorturl;
-                        }
-                    } catch (shortenError) {
-                        console.warn("No se pudo acortar el link:", shortenError);
-                    }
-
-                    await navigator.clipboard.writeText(finalUrl);
-                    setIsLinkCopied(true);
-                    setTimeout(() => setIsLinkCopied(false), 3000);
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        setIsLinkCopied(true);
+                        setTimeout(() => setIsLinkCopied(false), 2000);
+                    }).catch(err => {
+                        console.error("Clipboard write error:", err);
+                        alert("No se pudo copiar automáticamente. Por favor da permisos a tu navegador.");
+                    });
                 } catch (e) {
                     console.error("Error generating share link", e);
                     alert("Error al generar el link. El contenido podría ser demasiado grande.");
-                } finally {
-                    setIsGeneratingLink(false);
                 }
             };
 
@@ -993,15 +979,10 @@
                         <div className="flex space-x-2 items-center">
                             <button 
                                 onClick={generateShareLink} 
-                                disabled={isGeneratingLink}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-colors flex items-center border ${isLinkCopied ? 'bg-purple-500 border-purple-600 text-white' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-300 hover:text-white'} ${isGeneratingLink ? 'opacity-70 cursor-wait' : ''}`}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-colors flex items-center border ${isLinkCopied ? 'bg-purple-500 border-purple-600 text-white' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-300 hover:text-white'}`}
                                 title="Generar link para compartir"
                             >
-                                {isGeneratingLink ? (
-                                    <><i className="fas fa-spinner fa-spin mr-2"></i> Generando...</>
-                                ) : (
-                                    <><i className={`fas ${isLinkCopied ? 'fa-check' : 'fa-link'} mr-2`}></i> {isLinkCopied ? '¡Copiado!' : 'Compartir'}</>
-                                )}
+                                <i className={`fas ${isLinkCopied ? 'fa-check' : 'fa-link'} mr-2`}></i> {isLinkCopied ? '¡Copiado!' : 'Compartir'}
                             </button>
                             
                             <button 
