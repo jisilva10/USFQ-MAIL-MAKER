@@ -114,53 +114,99 @@
 
         const sharedConfig = getInitialStateFromHash();
 
-        const getInitialMes = () => {
-            if (sharedConfig && sharedConfig.m) return sharedConfig.m;
-            return localStorage.getItem('usfq_mes') || getMesAnioActual();
-        };
-        const getInitialHeroImage = () => {
-            if (sharedConfig && sharedConfig.h !== undefined) return sharedConfig.h;
-            return localStorage.getItem('usfq_heroImage') || '';
-        };
-        const getInitialTemplate = () => {
-            if (sharedConfig && sharedConfig.t) return sharedConfig.t;
-            return localStorage.getItem('usfq_template') || 'ce';
-        };
-        const getInitialTarjetas = (key, sharedKey) => {
-            if (sharedConfig && sharedConfig[sharedKey]) return sharedConfig[sharedKey];
-            const saved = localStorage.getItem(key);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed)) {
-                        return parsed.map(card => {
-                            if (card.ctaTexto === 'Inscribir') {
-                                return { ...card, ctaTexto: 'Inscríbete' };
-                            }
-                            return card;
-                        });
-                    }
-                    return parsed;
-                } catch (e) {
-                    return initialCards;
+        const MIGRATION_DONE = localStorage.getItem('usfq_migrated_to_projects');
+        let initialProjects = [];
+        const savedProjectsStr = localStorage.getItem('usfq_projects');
+        if (savedProjectsStr) {
+            initialProjects = JSON.parse(savedProjectsStr);
+        }
+
+        let initialActiveId = localStorage.getItem('usfq_active_project_id');
+
+        if (!MIGRATION_DONE && initialProjects.length === 0) {
+            const oldMes = localStorage.getItem('usfq_mes') || getMesAnioActual();
+            const oldHero = localStorage.getItem('usfq_heroImage') || '';
+            const oldCE = localStorage.getItem('usfq_tarjetas_ce');
+            const oldAlumni = localStorage.getItem('usfq_tarjetas_alumni');
+            const oldTemplate = localStorage.getItem('usfq_template') || 'ce';
+            const oldOverride = localStorage.getItem('usfq_overrideTexts');
+            
+            const migratedProject = {
+                id: Date.now().toString(),
+                name: 'Plantilla Original',
+                data: {
+                    m: oldMes,
+                    h: oldHero,
+                    t: oldTemplate,
+                    tCE: oldCE ? JSON.parse(oldCE) : initialCards,
+                    tA: oldAlumni ? JSON.parse(oldAlumni) : initialCards,
+                    o: oldOverride ? JSON.parse(oldOverride) : {}
                 }
+            };
+            initialProjects.push(migratedProject);
+            initialActiveId = migratedProject.id;
+            localStorage.setItem('usfq_migrated_to_projects', 'true');
+        }
+
+        if (sharedConfig) {
+            const importProject = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                name: 'Importada: ' + new Date().toLocaleTimeString(),
+                data: sharedConfig
+            };
+            initialProjects.push(importProject);
+            initialActiveId = importProject.id;
+        }
+
+        if (initialProjects.length === 0) {
+            const defaultProject = {
+                id: Date.now().toString(),
+                name: 'Plantilla 1',
+                data: { m: getMesAnioActual(), h: '', t: 'ce', tCE: initialCards, tA: initialCards, o: {} }
+            };
+            initialProjects.push(defaultProject);
+            initialActiveId = defaultProject.id;
+        }
+
+        localStorage.setItem('usfq_projects', JSON.stringify(initialProjects));
+        localStorage.setItem('usfq_active_project_id', initialActiveId);
+
+        const getActiveProjectData = () => {
+            const p = initialProjects.find(p => p.id === initialActiveId);
+            return p ? p.data : initialProjects[0].data;
+        };
+
+        const getInitialOverrideTexts = () => getActiveProjectData().o || {};
+        const getInitialTemplate = () => getActiveProjectData().t || 'ce';
+        const getInitialMes = () => getActiveProjectData().m || getMesAnioActual();
+        const getInitialHeroImage = () => getActiveProjectData().h || '';
+        const getInitialTarjetasCE = () => {
+            let cards = getActiveProjectData().tCE;
+            if (cards && Array.isArray(cards)) {
+                return cards.map(card => card.ctaTexto === 'Inscribir' ? { ...card, ctaTexto: 'Inscríbete' } : card);
+            }
+            return initialCards;
+        };
+        const getInitialTarjetasAlumni = () => {
+            let cards = getActiveProjectData().tA;
+            if (cards && Array.isArray(cards)) {
+                return cards;
             }
             return initialCards;
         };
 
-        const getInitialOverrideTexts = () => {
-            if (sharedConfig && sharedConfig.o) return sharedConfig.o;
-            const saved = localStorage.getItem('usfq_overrideTexts');
-            return saved ? JSON.parse(saved) : {};
-        };
-
         function App() {
+            const [projects, setProjects] = useState(initialProjects);
+            const [activeProjectId, setActiveProjectId] = useState(initialActiveId);
+            const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
+            const [editingProjectName, setEditingProjectName] = useState(null);
+            
             const overrideTextsRef = useRef(getInitialOverrideTexts());
             const [templateType, setTemplateType] = useState(getInitialTemplate);
             const [mes, setMes] = useState(getInitialMes);
             const [heroImage, setHeroImage] = useState(getInitialHeroImage);
-            const [tarjetasCE, setTarjetasCE] = useState(() => getInitialTarjetas('usfq_tarjetas_ce', 'tCE'));
-            const [tarjetasAlumni, setTarjetasAlumni] = useState(() => getInitialTarjetas('usfq_tarjetas_alumni', 'tA'));
+            const [tarjetasCE, setTarjetasCE] = useState(getInitialTarjetasCE);
+            const [tarjetasAlumni, setTarjetasAlumni] = useState(getInitialTarjetasAlumni);
 
             const tarjetas = templateType === 'ce' ? tarjetasCE : tarjetasAlumni;
             const setTarjetas = templateType === 'ce' ? setTarjetasCE : setTarjetasAlumni;
@@ -189,11 +235,36 @@
                 }
             };
 
-            useEffect(() => { localStorage.setItem('usfq_mes', mes); }, [mes]);
-            useEffect(() => { localStorage.setItem('usfq_heroImage', heroImage); }, [heroImage]);
-            useEffect(() => { localStorage.setItem('usfq_tarjetas_ce', JSON.stringify(tarjetasCE)); }, [tarjetasCE]);
-            useEffect(() => { localStorage.setItem('usfq_tarjetas_alumni', JSON.stringify(tarjetasAlumni)); }, [tarjetasAlumni]);
-            useEffect(() => { localStorage.setItem('usfq_template', templateType); }, [templateType]);
+            // Guardar proyecto completo
+            const saveCurrentProject = (partialData = {}) => {
+                setProjects(prev => {
+                    const updated = prev.map(p => {
+                        if (p.id === activeProjectId) {
+                            return {
+                                ...p,
+                                data: {
+                                    m: mes,
+                                    h: heroImage,
+                                    t: templateType,
+                                    tCE: tarjetasCE,
+                                    tA: tarjetasAlumni,
+                                    o: overrideTextsRef.current,
+                                    ...p.data,
+                                    ...partialData
+                                }
+                            };
+                        }
+                        return p;
+                    });
+                    localStorage.setItem('usfq_projects', JSON.stringify(updated));
+                    return updated;
+                });
+            };
+
+            // Auto-guardado global de cualquier cambio
+            useEffect(() => {
+                saveCurrentProject({ m: mes, h: heroImage, t: templateType, tCE: tarjetasCE, tA: tarjetasAlumni });
+            }, [mes, heroImage, templateType, tarjetasCE, tarjetasAlumni, activeProjectId]);
 
             useEffect(() => {
                 const handleMessage = (event) => {
@@ -207,26 +278,70 @@
                             setTarjetasAlumni(prev => prev.map(t => t.id === cardId ? { ...t, [field]: text } : t));
                         } else {
                             overrideTextsRef.current[id] = text;
-                            localStorage.setItem('usfq_overrideTexts', JSON.stringify(overrideTextsRef.current));
+                            saveCurrentProject({ o: overrideTextsRef.current });
                         }
                     }
                 };
                 window.addEventListener('message', handleMessage);
                 return () => window.removeEventListener('message', handleMessage);
-            }, []);
+            }, [activeProjectId, mes, heroImage, templateType, tarjetasCE, tarjetasAlumni]);
+
+            const switchProject = (id) => {
+                const p = projects.find(p => p.id === id);
+                if (!p) return;
+                setActiveProjectId(id);
+                localStorage.setItem('usfq_active_project_id', id);
+                
+                overrideTextsRef.current = p.data.o || {};
+                setTemplateType(p.data.t || 'ce');
+                setMes(p.data.m || getMesAnioActual());
+                setHeroImage(p.data.h || '');
+                setTarjetasCE(p.data.tCE || initialCards);
+                setTarjetasAlumni(p.data.tA || initialCards);
+                setIsProjectsModalOpen(false);
+            };
+
+            const createNewProject = () => {
+                const newProj = {
+                    id: Date.now().toString(),
+                    name: 'Nueva Plantilla ' + (projects.length + 1),
+                    data: { m: getMesAnioActual(), h: '', t: 'ce', tCE: initialCards, tA: initialCards, o: {} }
+                };
+                const updated = [...projects, newProj];
+                setProjects(updated);
+                localStorage.setItem('usfq_projects', JSON.stringify(updated));
+                switchProject(newProj.id);
+            };
+
+            const deleteProject = (id) => {
+                if (projects.length === 1) {
+                    alert("No puedes borrar la única plantilla. Crea una nueva primero.");
+                    return;
+                }
+                if (window.confirm("¿Estás seguro de borrar esta plantilla?")) {
+                    const updated = projects.filter(p => p.id !== id);
+                    setProjects(updated);
+                    localStorage.setItem('usfq_projects', JSON.stringify(updated));
+                    if (activeProjectId === id) {
+                        switchProject(updated[0].id);
+                    }
+                }
+            };
+
+            const renameProject = (id, newName) => {
+                const updated = projects.map(p => p.id === id ? { ...p, name: newName } : p);
+                setProjects(updated);
+                localStorage.setItem('usfq_projects', JSON.stringify(updated));
+                setEditingProjectName(null);
+            };
 
             const handleReset = () => {
-                // Conservamos el mes actual para no perder el progreso del periodo de trabajo
                 overrideTextsRef.current = {};
-                localStorage.removeItem('usfq_overrideTexts');
                 if (templateType === 'ce') {
                     setHeroImage('');
                     setTarjetasCE(initialCards);
-                    localStorage.removeItem('usfq_heroImage');
-                    localStorage.removeItem('usfq_tarjetas_ce');
                 } else {
                     setTarjetasAlumni(initialCards);
-                    localStorage.removeItem('usfq_tarjetas_alumni');
                 }
                 setIsResetModalOpen(false);
                 setActiveAccordion(0);
@@ -867,8 +982,15 @@
                                 </button>
                             </div>
                             <button 
+                                onClick={() => setIsProjectsModalOpen(true)}
+                                className="ml-4 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-bold transition-all flex items-center shadow-sm border border-gray-600 hover:border-gray-500 group"
+                                title="Mis Plantillas"
+                            >
+                                <i className="fas fa-folder-open mr-2 group-hover:scale-110 transition-transform"></i> Mis Plantillas
+                            </button>
+                            <button 
                                 onClick={() => setIsResetModalOpen(true)}
-                                className="ml-4 px-3 py-1.5 bg-gray-700 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-all flex items-center shadow-sm border border-gray-600 hover:border-red-500 group"
+                                className="ml-2 px-3 py-1.5 bg-gray-700 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-all flex items-center shadow-sm border border-gray-600 hover:border-red-500 group"
                                 title="Nuevo Correo (Borrar Contenido)"
                             >
                                 <i className="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i> Nuevo Correo
@@ -962,6 +1084,75 @@
                                             <button onClick={handleReset} className="px-5 py-2.5 bg-usfq-red text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200">
                                                 Sí, borrar contenido
                                             </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Projects Modal */}
+                        {isProjectsModalOpen && (
+                            <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                                <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col max-h-[85vh]">
+                                    <div className="bg-gray-900 p-4 flex justify-between items-center border-b border-gray-800 shrink-0">
+                                        <h3 className="text-white font-bold flex items-center"><i className="fas fa-folder-open mr-2 text-usfq-red"></i> Mis Plantillas</h3>
+                                        <button onClick={() => setIsProjectsModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                                            <i className="fas fa-times text-lg"></i>
+                                        </button>
+                                    </div>
+                                    <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <p className="text-sm text-gray-600">Todo se guarda automáticamente en la plantilla actual.</p>
+                                            <button onClick={createNewProject} className="px-4 py-2 bg-usfq-red hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md flex items-center transition-colors">
+                                                <i className="fas fa-plus mr-2"></i> Crear Nueva Plantilla
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="space-y-3">
+                                            {projects.map(p => (
+                                                <div key={p.id} className={`p-4 rounded-xl border ${activeProjectId === p.id ? 'border-usfq-red bg-red-50' : 'border-gray-200 bg-white'} flex justify-between items-center shadow-sm`}>
+                                                    <div className="flex items-center flex-1">
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${activeProjectId === p.id ? 'bg-usfq-red text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                                            <i className={`fas ${activeProjectId === p.id ? 'fa-check' : 'fa-file-alt'}`}></i>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            {editingProjectName === p.id ? (
+                                                                <input 
+                                                                    autoFocus
+                                                                    type="text" 
+                                                                    defaultValue={p.name}
+                                                                    className="border border-gray-300 rounded px-2 py-1 text-sm font-bold w-full max-w-xs focus:border-usfq-red focus:ring-1 focus:ring-usfq-red outline-none"
+                                                                    onBlur={(e) => renameProject(p.id, e.target.value)}
+                                                                    onKeyDown={(e) => e.key === 'Enter' && renameProject(p.id, e.target.value)}
+                                                                />
+                                                            ) : (
+                                                                <div className="flex items-center">
+                                                                    <h4 className="font-bold text-gray-900 mr-2">{p.name}</h4>
+                                                                    <button onClick={() => setEditingProjectName(p.id)} className="text-gray-400 hover:text-blue-500 text-xs" title="Renombrar">
+                                                                        <i className="fas fa-pen"></i>
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                Tipo: {p.data.t === 'ce' ? 'CE' : 'Alumni'} | 
+                                                                Mes: {p.data.m} | 
+                                                                Tarjetas: {p.data.t === 'ce' ? p.data.tCE?.length || 0 : p.data.tA?.length || 0}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex space-x-2">
+                                                        {activeProjectId !== p.id && (
+                                                            <button onClick={() => switchProject(p.id)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-lg transition-colors border border-gray-300">
+                                                                Cargar
+                                                            </button>
+                                                        )}
+                                                        <button onClick={() => deleteProject(p.id)} className="px-2 py-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors text-lg" title="Borrar">
+                                                            <i className="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
