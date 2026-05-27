@@ -70,6 +70,7 @@
 
         const initialCards = Array(4).fill(null).map((_, i) => ({
             id: i,
+            bannerTexto: 'Beneficios Alumni',
             imagen: '',
             linkGrande: '',
             categoria: '',
@@ -443,6 +444,7 @@
                 const newId = tarjetas.length > 0 ? Math.max(...tarjetas.map(t => t.id)) + 1 : 0;
                 setTarjetas([...tarjetas, {
                     id: newId,
+                    bannerTexto: 'Beneficios Alumni',
                     imagen: '',
                     linkGrande: '',
                     categoria: '',
@@ -653,9 +655,14 @@
                     tarjetasHTML += `
                     <td ${t2 ? 'width="48%" class="card-stack"' : 'colspan="3" width="100%" class="card-stack"'} valign="top" align="center" style="padding-bottom: 30px;">
                         <div style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #e5e7eb; position: relative; margin: 0 auto; text-align: left; width: 100%; max-width: 350px;">
+                            ${(()=>{
+                                const text = t1.bannerTexto !== undefined ? t1.bannerTexto : 'Beneficios Alumni';
+                                const isEmpty = text === '' || text === '<br>' || text.trim() === '';
+                                return !isEmpty ? `
                             <div style="position: absolute; top: 0; left: 0; background-color: #000000; color: #ffffff; font-size: 10px; font-weight: bold; padding: 6px 12px; border-bottom-right-radius: 12px; z-index: 20; text-transform: uppercase; letter-spacing: 1px;">
-                                Beneficios Alumni
-                            </div>
+                                <span ${editableAttr(`card-bannerTexto-${t1.id}`)}>${text}</span>
+                            </div>` : '';
+                            })()}
                             <a href="${t1.linkGrande || '#'}" target="_blank" style="display: block; position: relative; width: 100%; overflow: hidden; text-decoration: none; color: inherit; background-color: #f3f4f6; border-bottom: 1px solid #e2e8f0;">
                                 <img src="${t1.imagen || defaultCardImage}" alt="Beneficio" style="width: 100%; height: auto; display: block; border: 0;">
                             </a>
@@ -675,9 +682,14 @@
                         tarjetasHTML += `
                     <td width="48%" class="card-stack" valign="top" align="center" style="padding-bottom: 30px;">
                         <div style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #e5e7eb; position: relative; margin: 0 auto; text-align: left; width: 100%; max-width: 350px;">
+                            ${(()=>{
+                                const text = t2.bannerTexto !== undefined ? t2.bannerTexto : 'Beneficios Alumni';
+                                const isEmpty = text === '' || text === '<br>' || text.trim() === '';
+                                return !isEmpty ? `
                             <div style="position: absolute; top: 0; left: 0; background-color: #000000; color: #ffffff; font-size: 10px; font-weight: bold; padding: 6px 12px; border-bottom-right-radius: 12px; z-index: 20; text-transform: uppercase; letter-spacing: 1px;">
-                                Beneficios Alumni
-                            </div>
+                                <span ${editableAttr(`card-bannerTexto-${t2.id}`)}>${text}</span>
+                            </div>` : '';
+                            })()}
                             <a href="${t2.linkGrande || '#'}" target="_blank" style="display: block; position: relative; width: 100%; overflow: hidden; text-decoration: none; color: inherit; background-color: #f3f4f6; border-bottom: 1px solid #e2e8f0;">
                                 <img src="${t2.imagen || defaultCardImage}" alt="Beneficio" style="width: 100%; height: auto; display: block; border: 0;">
                             </a>
@@ -736,7 +748,7 @@
                     </p>
                     
                     <a href="https://www.usfq.edu.ec/es/contacto/contacto-empresarial/beneficios-vip" target="_blank" style="display: inline-block; background-color: #e11b22; color: #ffffff; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(225, 27, 34, 0.3);">
-                        <span style="margin-right: 8px;">🌐</span> <span ${editableAttr('al-btn1')}>${getText('al-btn1', 'Red Empresarial')}</span>
+                        <span style="margin-right: 8px;">🌐</span> <span ${editableAttr('al-btn1')}>${getText('al-btn1', 'Red de Beneficios')}</span>
                     </a>
                 </div>
 
@@ -1226,7 +1238,18 @@
                                                     
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div>
-                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen de Tarjeta (Subir o URL)</label>
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <label className="block text-sm font-medium text-gray-700">Imagen de Tarjeta (Subir o URL)</label>
+                                                                {templateType === 'alumni' && (!tarjeta.bannerTexto || tarjeta.bannerTexto.trim() === '' || tarjeta.bannerTexto === '<br>') && (
+                                                                    <button 
+                                                                        onClick={() => updateTarjeta(tarjeta.id, 'bannerTexto', 'Beneficios Alumni')}
+                                                                        className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded flex items-center shadow-sm transition-colors"
+                                                                        title="Agregar Franja Negra"
+                                                                    >
+                                                                        <i className="fas fa-plus mr-1"></i> Franja
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                             <input 
                                                                 type="text" 
                                                                 value={tarjeta.imagen} 
