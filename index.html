@@ -918,33 +918,33 @@
 
             const forceExportVisual = () => {
                 setIsModalOpen(false);
-                const html = generateHTML(true);
+                let html = generateHTML(true);
                 
-                const container = document.createElement('div');
-                container.innerHTML = html;
-                container.style.position = 'fixed';
-                container.style.left = '-9999px';
-                container.style.top = '0';
-                document.body.appendChild(container);
+                // Hack brutal para Outlook: Envolver todos los elementos de texto en <font face="Cambria">
+                // Esto es lo único que Outlook Web/Mac respeta al 100% si ignora el CSS inline.
+                html = html.replace(/<(p|h[1-6]|span|a|td)\b([^>]*)>/g, '<$1$2><font face="Cambria, Georgia, serif">');
+                html = html.replace(/<\/(p|h[1-6]|span|a|td)>/g, '</font></$1>');
 
-                const range = document.createRange();
-                range.selectNodeContents(container);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(range);
-
-                try {
-                    document.execCommand('copy');
-                    setIsVisualCopied(true);
-                    setTimeout(() => setIsVisualCopied(false), 2000);
-                    alert("¡Diseño visual copiado!\n\nVe a tu correo (Outlook, Gmail, etc.), abre un NUEVO mensaje (no uses Reenviar) y presiona Pegar (Ctrl+V o Cmd+V). El diseño se pegará directamente con todas las fuentes de Cambria intactas.");
-                } catch (err) {
-                    console.error('Error al copiar visual', err);
-                    alert('Tu navegador no permite copiar formato visual. Usa Exportar HTML.');
+                const blobHtml = new Blob([html], { type: "text/html" });
+                const blobText = new Blob(["Plantilla USFQ - Copia visual"], { type: "text/plain" });
+                
+                if (window.ClipboardItem) {
+                    const data = [new ClipboardItem({
+                        "text/plain": blobText,
+                        "text/html": blobHtml
+                    })];
+                    
+                    navigator.clipboard.write(data).then(() => {
+                        setIsVisualCopied(true);
+                        setTimeout(() => setIsVisualCopied(false), 2000);
+                        alert("¡Diseño visual copiado!\n\nVe a tu correo (Outlook, Gmail, etc.), abre un NUEVO mensaje y presiona Pegar. El diseño se pegará directamente con la tipografía Cambria forzada.");
+                    }).catch(err => {
+                        console.error('Error al copiar visual', err);
+                        alert('Tu navegador no permite copiar formato visual. Usa Exportar HTML.');
+                    });
+                } else {
+                    alert('Tu navegador no soporta esta función. Usa Exportar HTML.');
                 }
-
-                selection.removeAllRanges();
-                document.body.removeChild(container);
             };
 
             const exportVisual = () => {
