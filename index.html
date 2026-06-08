@@ -920,10 +920,6 @@
                 setIsModalOpen(false);
                 let html = generateHTML(true);
                 
-                // Hack brutal para forzar a WebKit y Outlook Mac a entender la fuente:
-                html = html.replace(/<(p|h[1-6]|span|a|td)\b([^>]*)>/gi, '<$1$2><font face="Cambria">');
-                html = html.replace(/<\/(p|h[1-6]|span|a|td)>/gi, '</font></$1>');
-                
                 // Usamos ClipboardItem para copiar el HTML crudo exactamente como está.
                 // Esto evita que Safari/Chrome eliminen el atributo `bgcolor` que Outlook necesita.
                 const blobHtml = new Blob([html], { type: "text/html" });
