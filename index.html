@@ -1146,17 +1146,10 @@
                             
                             <button 
                                 onClick={exportVisual} 
-                                className={`ml-2 px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center border ${isVisualCopied ? 'bg-green-500 border-green-600 text-white' : 'bg-blue-600 border-blue-700 hover:bg-blue-700 text-white'}`}
+                                className={`ml-2 px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center border ${isVisualCopied ? 'bg-green-500 border-green-600 text-white' : 'bg-gray-900 border-black hover:bg-black text-white'}`}
                                 title="Copia el diseño visualmente para pegarlo directo en un nuevo correo (Outlook o Gmail)"
                             >
                                 <i className={`fas ${isVisualCopied ? 'fa-check' : 'fa-paste'} mr-2`}></i> Copiar para Correo
-                            </button>
-                            
-                            <button 
-                                onClick={exportHTML} 
-                                className={`ml-2 px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center border ${isCopied ? 'bg-green-500 border-green-600 text-white' : 'bg-usfq-red border-red-700 hover:bg-red-700 text-white'}`}
-                            >
-                                <i className={`fas ${isCopied ? 'fa-check' : 'fa-code'} mr-2`}></i> Exportar HTML
                             </button>
                         </div>
                     </header>
@@ -1270,10 +1263,6 @@
                                 </div>
                                 
                                 <div className="flex items-center space-x-3">
-                                    <a href="https://us11.admin.mailchimp.com/?ref=plums_nav" target="_blank" rel="noreferrer" className="w-9 h-9 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-lg text-sm flex items-center justify-center transition-colors border border-yellow-300 shadow-sm" title="Abrir Mailchimp">
-                                        <i className="fas fa-mail-bulk"></i>
-                                    </a>
-                                    
                                     <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 shadow-inner">
                                         <button 
                                             onClick={() => setTemplateType('ce')} 
