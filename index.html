@@ -504,10 +504,10 @@
                                     ${t.titulo ? `<h4 ${editableAttr(`card-titulo-${t.id}`)} style="color: #e11b22; font-weight: bold; font-size: 16px; margin: 0 0 8px 0;">${t.titulo}</h4>` : ''}
                                     ${t.descripcion ? `<p ${editableAttr(`card-descripcion-${t.id}`)} style="color: #6b7280; font-size: 14px; margin: 0 0 16px 0; line-height: 1.5;">${t.descripcion}</p>` : ''}
                                     
-                                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                    <table cellpadding="0" cellspacing="0" border="0" align="center">
                                         <tr>
                                             <td align="center" bgcolor="#e11b22" style="border-radius: 8px;">
-                                                <a href="${t.ctaLink || '#'}" target="_blank" style="display: block; color: #ffffff; text-decoration: none; padding: 12px 15px; font-weight: bold; font-family: Arial, sans-serif;">
+                                                <a href="${t.ctaLink || '#'}" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 10px 20px; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">
                                                     ${getEmoji(t.ctaIcono)} ${t.ctaTexto || 'Me Interesa'}
                                                 </a>
                                             </td>
@@ -574,8 +574,8 @@
             </tr>
             <tr>
                 <td bgcolor="#1a1a1a" align="center" style="background-color: #1a1a1a; padding: 32px; text-align: center; color: #ffffff; font-family: Arial, sans-serif;">
-                    <h2 ${editableAttr('ce-h2')} style="font-size: 24px; font-weight: bold; margin-bottom: 8px; margin-top: 0;">${getText('ce-h2', '¡Nuevas Oportunidades este Mes!')}</h2>
-                    <p ${editableAttr('ce-p2')} style="font-size: 14px; color: #e5e7eb; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto; margin-top: 0;">
+                    <h2 ${editableAttr('ce-h2')} style="font-size: 24px; font-weight: bold; margin-bottom: 8px; margin-top: 0; color: #ffffff;">${getText('ce-h2', '¡Nuevas Oportunidades este Mes!')}</h2>
+                    <p ${editableAttr('ce-p2')} style="font-size: 14px; color: #e5e7eb; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto; margin-top: 0; line-height: 1.5;">
                         ${getText('ce-p2', 'Descubre los beneficios y descuentos exclusivos diseñados especialmente para ti y tu equipo. Aprovecha al máximo tu membresía y comparte estas increíbles oportunidades.')}
                     </p>
                     <table cellpadding="0" cellspacing="0" border="0" align="center">
@@ -622,8 +622,8 @@
             <tr>
                 <td bgcolor="#1a1a1a" align="center" style="background-color: #1a1a1a; padding: 32px; text-align: center; color: #9ca3af; font-family: Arial, sans-serif; font-size: 14px;">
                     <h5 ${editableAttr('ce-footer1')} style="margin-top: 0; margin-bottom: 8px; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">${getText('ce-footer1', 'USFQ PATH - Contacto Empresarial')}</h5>
-                    <p ${editableAttr('ce-footer2')} style="margin: 0 0 8px 0;">${getText('ce-footer2', 'Casa Tomate 202')}</p>
-                    <p style="margin: 0 0 16px 0;"><a ${editableAttr('ce-footer3')} href="mailto:gestionalumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">${getText('ce-footer3', 'gestionalumni@usfq.edu.ec')}</a></p>
+                    <p ${editableAttr('ce-footer2')} style="margin: 0 0 8px 0; color: #9ca3af;">${getText('ce-footer2', 'Casa Tomate 202')}</p>
+                    <p style="margin: 0 0 16px 0; color: #9ca3af;"><a ${editableAttr('ce-footer3')} href="mailto:gestionalumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">${getText('ce-footer3', 'gestionalumni@usfq.edu.ec')}</a></p>
                     
                     <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top: 10px; margin-bottom: 15px;">
                         <tr>
@@ -702,10 +702,10 @@
                                     ${t.titulo ? `<h4 ${editableAttr(`card-titulo-${t.id}`)} style="color: #e11b22; font-weight: bold; font-size: 18px; margin: 0 0 12px 0;">${t.titulo}</h4>` : ''}
                                     ${t.descripcion ? `<p ${editableAttr(`card-descripcion-${t.id}`)} style="color: #4b5563; font-size: 14px; margin: 0 0 24px 0; line-height: 1.6;">${t.descripcion}</p>` : ''}
                                     
-                                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                    <table cellpadding="0" cellspacing="0" border="0" align="center">
                                         <tr>
                                             <td align="center" style="border: 2px solid #111111; border-radius: 8px;">
-                                                <a href="${t.ctaLink || '#'}" target="_blank" style="display: block; color: #111111; text-decoration: none; padding: 12px 15px; font-weight: bold;">
+                                                <a href="${t.ctaLink || '#'}" target="_blank" style="display: inline-block; color: #111111; text-decoration: none; padding: 10px 20px; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">
                                                     ${getEmoji(t.ctaIcono)} ${t.ctaTexto || 'Me Interesa'}
                                                 </a>
                                             </td>
@@ -835,10 +835,10 @@
                     <tr>
                         <td bgcolor="#111111" align="center" style="background-color: #111111; color: #9ca3af; padding: 40px 32px; text-align: center; font-size: 14px; border-top: 4px solid #e11b22; font-family: Arial, sans-serif;">
                             <h5 ${editableAttr('al-footer1')} style="margin: 0 0 8px 0; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">${getText('al-footer1', 'USFQ PATH - Alumni')}</h5>
-                            <p ${editableAttr('al-footer2')} style="margin: 0 0 8px 0;">${getText('al-footer2', 'Casa Tomate 202')}</p>
-                            <p style="margin: 0 0 24px 0;"><a ${editableAttr('al-footer3')} href="mailto:alumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">${getText('al-footer3', 'alumni@usfq.edu.ec')}</a></p>
+                            <p ${editableAttr('al-footer2')} style="margin: 0 0 8px 0; color: #9ca3af;">${getText('al-footer2', 'Casa Tomate 202')}</p>
+                            <p style="margin: 0 0 24px 0; color: #9ca3af;"><a ${editableAttr('al-footer3')} href="mailto:alumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500;">${getText('al-footer3', 'alumni@usfq.edu.ec')}</a></p>
                             
-                            <p ${editableAttr('al-footer4')} style="margin: 0 0 16px 0; font-size: 12px;">${getText('al-footer4', 'Síguenos en nuestras redes sociales y mantente al tanto de todas nuestras noticias.')}</p>
+                            <p ${editableAttr('al-footer4')} style="margin: 0 0 16px 0; font-size: 12px; color: #9ca3af;">${getText('al-footer4', 'Síguenos en nuestras redes sociales y mantente al tanto de todas nuestras noticias.')}</p>
                         </td>
                     </tr>
                 </table>
