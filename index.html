@@ -924,42 +924,28 @@
                 html = html.replace(/<(p|h[1-6]|span|a|td)\b([^>]*)>/gi, '<$1$2><font face="Cambria">');
                 html = html.replace(/<\/(p|h[1-6]|span|a|td)>/gi, '</font></$1>');
                 
-                // Usamos un iframe para forzar al navegador a renderizar completamente el HTML
-                // y computar los estilos (incluyendo fuentes) antes de copiar.
-                const iframe = document.createElement('iframe');
-                iframe.style.position = 'absolute';
-                iframe.style.width = '800px';
-                iframe.style.height = '600px';
-                iframe.style.top = '-10000px';
-                iframe.style.left = '-10000px';
-                iframe.style.opacity = '0';
-                document.body.appendChild(iframe);
+                // Usamos ClipboardItem para copiar el HTML crudo exactamente como está.
+                // Esto evita que Safari/Chrome eliminen el atributo `bgcolor` que Outlook necesita.
+                const blobHtml = new Blob([html], { type: "text/html" });
+                const blobText = new Blob(["Plantilla USFQ - Copia visual"], { type: "text/plain" });
                 
-                const idoc = iframe.contentWindow.document;
-                idoc.open();
-                idoc.write(html);
-                idoc.close();
-
-                // Esperamos 100ms para que el motor de layout aplique los estilos
-                setTimeout(() => {
-                    const range = idoc.createRange();
-                    range.selectNodeContents(idoc.body);
-                    const selection = iframe.contentWindow.getSelection();
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-
-                    try {
-                        iframe.contentWindow.document.execCommand('copy');
+                if (window.ClipboardItem) {
+                    const data = [new ClipboardItem({
+                        "text/plain": blobText,
+                        "text/html": blobHtml
+                    })];
+                    
+                    navigator.clipboard.write(data).then(() => {
                         setIsVisualCopied(true);
                         setTimeout(() => setIsVisualCopied(false), 2000);
-                        alert("¡Diseño visual copiado!\n\nVe a tu correo (Outlook, Gmail, etc.), abre un NUEVO mensaje y presiona Pegar. El diseño se pegará idéntico a una página web real, forzando a Outlook a respetar la fuente Cambria.");
-                    } catch (err) {
+                        alert("¡Diseño visual copiado!\n\nVe a Outlook, pega el diseño y recuerda seleccionar 'Mantener formato de origen' si la aplicación te lo pregunta. Los fondos y fuentes se mantendrán.");
+                    }).catch(err => {
                         console.error('Error al copiar visual', err);
                         alert('Tu navegador no permite copiar formato visual. Usa Exportar HTML.');
-                    }
-
-                    document.body.removeChild(iframe);
-                }, 100);
+                    });
+                } else {
+                    alert('Tu navegador no soporta esta función. Usa Exportar HTML.');
+                }
             };
 
             const exportVisual = () => {
