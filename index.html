@@ -482,49 +482,46 @@
                 <\/script>
                 `;
 
-                let tarjetasHTML = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 100%;"><tbody>';
+                let tarjetasHTML = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%;"><tbody>';
                 for (let i = 0; i < tarjetas.length; i += 2) {
                     const t1 = tarjetas[i];
                     const t2 = tarjetas[i + 1];
                     tarjetasHTML += '<tr class="mobile-stack">';
                     
-                    tarjetasHTML += `
-                    <td ${t2 ? 'width="48%" class="card-stack"' : 'colspan="3" width="100%" class="card-stack"'} valign="top" align="center" style="padding-bottom: 30px;">
-                        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden" style="width: 100%; max-width: 350px; margin: 0 auto; text-align: left;">
-                            <a href="${t1.linkGrande || '#'}" target="_blank" class="block overflow-hidden" style="background-color: #f8fafc; text-align: center; border-bottom: 1px solid #e2e8f0; padding: 10px; display: block;">
-                                <img src="${t1.imagen || defaultCardImage}" alt="Arte" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
-                            </a>
-                            <div class="p-5" style="padding: 20px;">
-                                ${t1.categoria ? `<div ${editableAttr(`card-categoria-${t1.id}`)} class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t1.categoria}</div>` : ''}
-                                ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} class="text-usfq-red leading-tight" style="color: #e11b22 !important; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t1.titulo}</h4>` : ''}
-                                ${t1.descripcion ? `<p ${editableAttr(`card-descripcion-${t1.id}`)} class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t1.descripcion}</p>` : ''}
-                                
-                                <a href="${t1.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
-                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t1.ctaIcono)}</span> <span>${t1.ctaTexto || 'Me Interesa'}</span>
-                                </a>
-                            </div>
-                        </div>
+                    const renderCardCE = (t, isFullWidth) => `
+                    <td ${!isFullWidth ? 'width="48%" class="card-stack"' : 'colspan="3" width="100%" class="card-stack"'} valign="top" align="center" style="padding-bottom: 30px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; border-collapse: separate; overflow: hidden; max-width: 350px; margin: 0 auto;">
+                            <tr>
+                                <td style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: center; padding: 10px;">
+                                    <a href="${t.linkGrande || '#'}" target="_blank" style="display: block;">
+                                        <img src="${t.imagen || defaultCardImage}" alt="Arte" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 20px; text-align: left; font-family: Georgia, Arial, sans-serif;">
+                                    ${t.categoria ? `<div ${editableAttr(`card-categoria-${t.id}`)} style="color: #e11b22; font-weight: bold; font-size: 12px; text-transform: uppercase; margin-bottom: 8px;">${t.categoria}</div>` : ''}
+                                    ${t.titulo ? `<h4 ${editableAttr(`card-titulo-${t.id}`)} style="color: #e11b22; font-weight: bold; font-size: 16px; margin: 0 0 8px 0;">${t.titulo}</h4>` : ''}
+                                    ${t.descripcion ? `<p ${editableAttr(`card-descripcion-${t.id}`)} style="color: #6b7280; font-size: 14px; margin: 0 0 16px 0; line-height: 1.5;">${t.descripcion}</p>` : ''}
+                                    
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td align="center" bgcolor="#e11b22" style="border-radius: 8px;">
+                                                <a href="${t.ctaLink || '#'}" target="_blank" style="display: block; color: #ffffff; text-decoration: none; padding: 12px 15px; font-weight: bold; font-family: Arial, sans-serif;">
+                                                    ${getEmoji(t.ctaIcono)} ${t.ctaTexto || 'Me Interesa'}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
                     </td>`;
 
+                    tarjetasHTML += renderCardCE(t1, !t2);
                     if (t2) {
                         tarjetasHTML += `<td width="4%" class="card-spacer" style="width: 4%;"></td>`;
-                        tarjetasHTML += `
-                    <td width="48%" class="card-stack" valign="top" align="center" style="padding-bottom: 30px;">
-                        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden" style="width: 100%; max-width: 350px; margin: 0 auto; text-align: left;">
-                            <a href="${t2.linkGrande || '#'}" target="_blank" class="block overflow-hidden" style="background-color: #f8fafc; text-align: center; border-bottom: 1px solid #e2e8f0; padding: 10px; display: block;">
-                                <img src="${t2.imagen || defaultCardImage}" alt="Arte" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
-                            </a>
-                            <div class="p-5" style="padding: 20px;">
-                                ${t2.categoria ? `<div ${editableAttr(`card-categoria-${t2.id}`)} class="text-usfq-red uppercase" style="color: #e11b22; font-weight: bold; font-size: 12px; margin-bottom: 8px;">${t2.categoria}</div>` : ''}
-                                ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} class="text-usfq-red leading-tight" style="color: #e11b22 !important; font-weight: bold; font-size: 16px; margin-top: 0; margin-bottom: 8px;">${t2.titulo}</h4>` : ''}
-                                ${t2.descripcion ? `<p ${editableAttr(`card-descripcion-${t2.id}`)} class="text-gray-500" style="color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px;">${t2.descripcion}</p>` : ''}
-                                
-                                <a href="${t2.ctaLink || '#'}" target="_blank" class="bg-usfq-red text-white" style="background-color: #e11b22; color: #ffffff; text-decoration: none; padding: 10px 15px; border-radius: 8px; display: block; text-align: center; font-weight: bold;">
-                                    <span style="margin-right: 8px; font-size: 16px;">${getEmoji(t2.ctaIcono)}</span> <span>${t2.ctaTexto || 'Me Interesa'}</span>
-                                </a>
-                            </div>
-                        </div>
-                    </td>`;
+                        tarjetasHTML += renderCardCE(t2, false);
                     }
                     tarjetasHTML += '</tr>';
                 }
@@ -550,7 +547,7 @@
 <body style="background-color: #f3f4f6; margin: 0; padding: 32px 0; font-family: Georgia, serif; color: #1f2937;">
 
     <!-- Main Wrapper -->
-    <table width="100%" align="center" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 768px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+    <table width="768" align="center" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 768px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <tr>
             <td>
         <!-- HEADER -->
@@ -647,63 +644,56 @@
                 <\/script>
                 `;
 
-                let tarjetasHTML = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 100%;"><tbody>';
+                let tarjetasHTML = '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%;"><tbody>';
                 for (let i = 0; i < tarjetas.length; i += 2) {
                     const t1 = tarjetas[i];
                     const t2 = tarjetas[i + 1];
                     tarjetasHTML += '<tr class="mobile-stack">';
                     
-                    tarjetasHTML += `
-                    <td ${t2 ? 'width="48%" class="card-stack"' : 'colspan="3" width="100%" class="card-stack"'} valign="top" align="center" style="padding-bottom: 30px;">
-                        <div style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #e5e7eb; position: relative; margin: 0 auto; text-align: left; width: 100%; max-width: 350px;">
-                            ${(()=>{
-                                const text = t1.bannerTexto !== undefined ? t1.bannerTexto : 'Beneficios Alumni';
-                                const isEmpty = text === '' || text === '<br>' || text.trim() === '';
-                                return !isEmpty ? `
-                            <div style="position: absolute; top: 0; left: 0; background-color: #000000; color: #ffffff; font-size: 10px; font-weight: bold; padding: 6px 12px; border-bottom-right-radius: 12px; z-index: 20; text-transform: uppercase; letter-spacing: 1px;">
-                                <span ${editableAttr(`card-bannerTexto-${t1.id}`)}>${text}</span>
-                            </div>` : '';
-                            })()}
-                            <a href="${t1.linkGrande || '#'}" target="_blank" style="display: block; position: relative; width: 100%; overflow: hidden; text-decoration: none; color: inherit; background-color: #f3f4f6; border-bottom: 1px solid #e2e8f0;">
-                                <img src="${t1.imagen || defaultCardImage}" alt="Beneficio" style="width: 100%; height: auto; display: block; border: 0;">
-                            </a>
-                            <div style="padding: 24px; display: block; background-color: #ffffff;">
-                                ${t1.categoria ? `<div ${editableAttr(`card-categoria-${t1.id}`)} style="color: #e11b22; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">${t1.categoria}</div>` : ''}
-                                ${t1.titulo ? `<h4 ${editableAttr(`card-titulo-${t1.id}`)} style="color: #e11b22 !important; font-weight: bold; font-size: 18px; line-height: 1.25; margin-top: 0; margin-bottom: 12px;">${t1.titulo}</h4>` : ''}
-                                ${t1.descripcion ? `<p ${editableAttr(`card-descripcion-${t1.id}`)} style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t1.descripcion}</p>` : ''}
-                                <a href="${t1.ctaLink || '#'}" target="_blank" style="display: block; width: 100%; text-align: center; border: 2px solid #111111; color: #111111; text-decoration: none; font-weight: bold; padding: 10px 16px; border-radius: 8px; box-sizing: border-box;">
-                                    <span style="margin-right: 8px;">${getEmoji(t1.ctaIcono)}</span> <span>${t1.ctaTexto || 'Me Interesa'}</span>
-                                </a>
-                            </div>
-                        </div>
+                    const renderCardAlumni = (t, isFullWidth) => {
+                        const text = t.bannerTexto !== undefined ? t.bannerTexto : 'Beneficios Alumni';
+                        const isEmpty = text === '' || text === '<br>' || text.trim() === '';
+                        return `
+                    <td ${!isFullWidth ? 'width="48%" class="card-stack"' : 'colspan="3" width="100%" class="card-stack"'} valign="top" align="center" style="padding-bottom: 30px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; border-collapse: separate; overflow: hidden; max-width: 350px; margin: 0 auto;">
+                            ${!isEmpty ? `
+                            <tr>
+                                <td bgcolor="#000000" style="background-color: #000000; color: #ffffff; font-size: 10px; font-weight: bold; padding: 8px 12px; text-transform: uppercase; letter-spacing: 1px; text-align: center; font-family: Arial, sans-serif;">
+                                    <span ${editableAttr(`card-bannerTexto-${t.id}`)}>${text}</span>
+                                </td>
+                            </tr>` : ''}
+                            <tr>
+                                <td style="background-color: #f3f4f6; border-bottom: 1px solid #e2e8f0; text-align: center;">
+                                    <a href="${t.linkGrande || '#'}" target="_blank" style="display: block;">
+                                        <img src="${t.imagen || defaultCardImage}" alt="Beneficio" width="330" border="0" style="width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto;">
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 24px; text-align: left; font-family: Arial, sans-serif;">
+                                    ${t.categoria ? `<div ${editableAttr(`card-categoria-${t.id}`)} style="color: #e11b22; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">${t.categoria}</div>` : ''}
+                                    ${t.titulo ? `<h4 ${editableAttr(`card-titulo-${t.id}`)} style="color: #e11b22; font-weight: bold; font-size: 18px; margin: 0 0 12px 0;">${t.titulo}</h4>` : ''}
+                                    ${t.descripcion ? `<p ${editableAttr(`card-descripcion-${t.id}`)} style="color: #4b5563; font-size: 14px; margin: 0 0 24px 0; line-height: 1.6;">${t.descripcion}</p>` : ''}
+                                    
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td align="center" style="border: 2px solid #111111; border-radius: 8px;">
+                                                <a href="${t.ctaLink || '#'}" target="_blank" style="display: block; color: #111111; text-decoration: none; padding: 12px 15px; font-weight: bold;">
+                                                    ${getEmoji(t.ctaIcono)} ${t.ctaTexto || 'Me Interesa'}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
                     </td>`;
+                    };
 
+                    tarjetasHTML += renderCardAlumni(t1, !t2);
                     if (t2) {
                         tarjetasHTML += `<td width="4%" class="card-spacer" style="width: 4%;"></td>`;
-                        tarjetasHTML += `
-                    <td width="48%" class="card-stack" valign="top" align="center" style="padding-bottom: 30px;">
-                        <div style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #e5e7eb; position: relative; margin: 0 auto; text-align: left; width: 100%; max-width: 350px;">
-                            ${(()=>{
-                                const text = t2.bannerTexto !== undefined ? t2.bannerTexto : 'Beneficios Alumni';
-                                const isEmpty = text === '' || text === '<br>' || text.trim() === '';
-                                return !isEmpty ? `
-                            <div style="position: absolute; top: 0; left: 0; background-color: #000000; color: #ffffff; font-size: 10px; font-weight: bold; padding: 6px 12px; border-bottom-right-radius: 12px; z-index: 20; text-transform: uppercase; letter-spacing: 1px;">
-                                <span ${editableAttr(`card-bannerTexto-${t2.id}`)}>${text}</span>
-                            </div>` : '';
-                            })()}
-                            <a href="${t2.linkGrande || '#'}" target="_blank" style="display: block; position: relative; width: 100%; overflow: hidden; text-decoration: none; color: inherit; background-color: #f3f4f6; border-bottom: 1px solid #e2e8f0;">
-                                <img src="${t2.imagen || defaultCardImage}" alt="Beneficio" style="width: 100%; height: auto; display: block; border: 0;">
-                            </a>
-                            <div style="padding: 24px; display: block; background-color: #ffffff;">
-                                ${t2.categoria ? `<div ${editableAttr(`card-categoria-${t2.id}`)} style="color: #e11b22; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">${t2.categoria}</div>` : ''}
-                                ${t2.titulo ? `<h4 ${editableAttr(`card-titulo-${t2.id}`)} style="color: #e11b22 !important; font-weight: bold; font-size: 18px; line-height: 1.25; margin-top: 0; margin-bottom: 12px;">${t2.titulo}</h4>` : ''}
-                                ${t2.descripcion ? `<p ${editableAttr(`card-descripcion-${t2.id}`)} style="font-size: 14px; color: #4b5563; margin-top: 0; margin-bottom: 24px; line-height: 1.6;">${t2.descripcion}</p>` : ''}
-                                <a href="${t2.ctaLink || '#'}" target="_blank" style="display: block; width: 100%; text-align: center; border: 2px solid #111111; color: #111111; text-decoration: none; font-weight: bold; padding: 10px 16px; border-radius: 8px; box-sizing: border-box;">
-                                    <span style="margin-right: 8px;">${getEmoji(t2.ctaIcono)}</span> <span>${t2.ctaTexto || 'Me Interesa'}</span>
-                                </a>
-                            </div>
-                        </div>
-                    </td>`;
+                        tarjetasHTML += renderCardAlumni(t2, false);
                     }
                     tarjetasHTML += '</tr>';
                 }
@@ -727,7 +717,7 @@
 </head>
 <body style="background-color: #f3f4f6; color: #1f2937; font-family: Helvetica, Arial, sans-serif; padding: 32px 0; margin: 0;">
 
-    <table width="100%" align="center" cellpadding="0" cellspacing="0" border="0" style="max-width: 768px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    <table width="768" align="center" cellpadding="0" cellspacing="0" border="0" style="max-width: 768px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
         <tr>
             <td>
                 <!-- HEADER TIPO BANNER ALUMNI -->
