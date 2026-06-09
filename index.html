@@ -735,16 +735,18 @@
     <base target="_blank">
     <style type="text/css">
         @media only screen and (max-width: 600px) {
+            .main-wrapper { width: 100% !important; min-width: 100% !important; }
             .mobile-stack { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
             .card-stack { display: block !important; width: 100% !important; padding-bottom: 20px !important; box-sizing: border-box !important; }
             .card-spacer { display: none !important; }
             .mobile-pad { padding: 30px 20px !important; }
+            img { max-width: 100% !important; height: auto !important; }
         }
     </style>
 </head>
 <body style="background-color: #f3f4f6; color: #1f2937; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 32px 0; margin: 0;">
 
-    <table width="768" align="center" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 768px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    <table class="main-wrapper" width="768" align="center" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 768px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
         <tr>
             <td>
                 <!-- HEADER TIPO BANNER ALUMNI -->
@@ -757,7 +759,7 @@
                     <tr>
                         <td align="center" style="padding-bottom: 24px; line-height: normal; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                             <span style="display: inline-block; background-color: #111111; color: #ffffff; padding: 10px 24px; border-radius: 20px; font-size: 15px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                                \${mes || 'MES Y AÑO'}
+                                ${mes || 'MES Y AÑO'}
                             </span>
                         </td>
                     </tr>
@@ -767,16 +769,16 @@
                 <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td bgcolor="#e11b22" align="center" style="background-color: #e11b22; padding: 40px 32px; text-align: center; border-bottom: 4px solid #111111; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                            <h2 style="font-size: 28px; font-weight: 800; color: #ffffff; margin: 0 0 16px 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#ffffff"><span \${editableAttr('al-h1-v2')}>\${getText('al-h1-v2', '¡Hola Dragones!')}</span></font></h2>
+                            <h2 style="font-size: 28px; font-weight: 800; color: #ffffff; margin: 0 0 16px 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#ffffff"><span ${editableAttr('al-h1-v2')}>${getText('al-h1-v2', '¡Hola Dragones!')}</span></font></h2>
                             <p style="color: #f9fafb; font-size: 17px; max-width: 600px; margin: 0 auto 28px auto; line-height: 1.625; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                                <font color="#f9fafb"><span \${editableAttr('al-p1-v2')}>\${getText('al-p1-v2', 'Queremos asegurarnos de que nuestros Alumni USFQ conozcan la lista de beneficios exclusivos que tienen a su disposición, para que aprovechen al máximo todas las oportunidades y descuentos por ser graduados.')}</span></font>
+                                <font color="#f9fafb"><span ${editableAttr('al-p1-v2')}>${getText('al-p1-v2', 'Queremos asegurarnos de que nuestros Alumni USFQ conozcan la lista de beneficios exclusivos que tienen a su disposición, para que aprovechen al máximo todas las oportunidades y descuentos por ser graduados.')}</span></font>
                             </p>
                             
                             <table cellpadding="0" cellspacing="0" border="0" align="center">
                                 <tr>
                                     <td align="center" bgcolor="#111111" style="border-radius: 8px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                                         <a href="https://www.usfq.edu.ec/es/alumni/oportunidades-beneficios/red-beneficios" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 14px 36px; font-weight: bold; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 17px;">
-                                            🌐 <font color="#ffffff"><span \${editableAttr('al-btn1')}>\${getText('al-btn1', 'Red de Beneficios')}</span></font>
+                                            🌐 <font color="#ffffff"><span ${editableAttr('al-btn1')}>${getText('al-btn1', 'Red de Beneficios')}</span></font>
                                         </a>
                                     </td>
                                 </tr>
@@ -788,8 +790,8 @@
                 <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td bgcolor="#f9fafb" align="center" style="background-color: #f9fafb; padding: 20px 32px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                            <p \${editableAttr('al-p2')} style="font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                                \${getText('al-p2', '*Recuerda que para acceder a cualquier beneficio debes presentar tu carnet USFQ*')}
+                            <p ${editableAttr('al-p2')} style="font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                                ${getText('al-p2', '*Recuerda que para acceder a cualquier beneficio debes presentar tu carnet USFQ*')}
                             </p>
                         </td>
                     </tr>
@@ -800,11 +802,11 @@
                     <tr>
                         <td bgcolor="#f9f9f9" align="center" style="background-color: #f9f9f9; padding: 48px 32px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                             <div style="text-align: center; margin-bottom: 48px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                                <h3 style="font-size: 32px; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: -0.5px; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><span \${editableAttr('al-h2')}>\${getText('al-h2', 'Red de Beneficios')}</span></h3>
+                                <h3 style="font-size: 32px; font-weight: 900; color: #111111; text-transform: uppercase; letter-spacing: -0.5px; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><span ${editableAttr('al-h2')}>${getText('al-h2', 'Red de Beneficios')}</span></h3>
                                 <div style="width: 64px; height: 5px; background-color: #e11b22; margin: 20px auto 0 auto; border-radius: 4px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></div>
                             </div>
                             <!-- Grilla de Tarjetas -->
-                            \${tarjetasHTML}
+                            ${tarjetasHTML}
                         </td>
                     </tr>
                 </table>
@@ -814,14 +816,14 @@
                     <tr>
                         <td bgcolor="#111111" align="center" style="background-color: #111111; padding: 48px 32px; text-align: center; border-bottom: 4px solid #e11b22; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                             <p style="color: #f9fafb; font-size: 17px; max-width: 600px; margin: 0 auto 32px auto; line-height: 1.625; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                                <font color="#f9fafb"><span \${editableAttr('al-p3')}>\${getText('al-p3', 'Accede a todos estos increíbles beneficios exclusivos presentando tu carnet Alumni. ¡Sigue las instrucciones del siguiente enlace y descárgalo!')}</span></font>
+                                <font color="#f9fafb"><span ${editableAttr('al-p3')}>${getText('al-p3', 'Accede a todos estos increíbles beneficios exclusivos presentando tu carnet Alumni. ¡Sigue las instrucciones del siguiente enlace y descárgalo!')}</span></font>
                             </p>
                             
                             <table cellpadding="0" cellspacing="0" border="0" align="center">
                                 <tr>
                                     <td align="center" bgcolor="#e11b22" style="border-radius: 8px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                                         <a href="https://youtu.be/EY-uYVxWVaw?si=VQkARvelCP8ph8aZ" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 14px 36px; font-weight: bold; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 17px;">
-                                            🪪 <font color="#ffffff"><span \${editableAttr('al-btn2')}>\${getText('al-btn2', 'Descarga tu carnet Alumni')}</span></font>
+                                            🪪 <font color="#ffffff"><span ${editableAttr('al-btn2')}>${getText('al-btn2', 'Descarga tu carnet Alumni')}</span></font>
                                         </a>
                                     </td>
                                 </tr>
@@ -834,18 +836,18 @@
                 <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#111111">
                     <tr>
                         <td bgcolor="#111111" align="center" style="background-color: #111111; color: #9ca3af; padding: 48px 32px; text-align: center; font-size: 14px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                            <h5 style="margin: 0 0 16px 0; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#ffffff"><span \${editableAttr('al-footer1')}>\${getText('al-footer1', 'USFQ PATH - Alumni')}</span></font></h5>
-                            <p style="margin: 0 0 8px 0; color: #9ca3af; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#9ca3af"><span \${editableAttr('al-footer2')}>\${getText('al-footer2', 'Casa Tomate 202')}</span></font></p>
-                            <p style="margin: 0 0 24px 0; color: #9ca3af; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#9ca3af"><a \${editableAttr('al-footer3')} href="mailto:alumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">\${getText('al-footer3', 'alumni@usfq.edu.ec')}</a></font></p>
+                            <h5 style="margin: 0 0 16px 0; color: #ffffff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#ffffff"><span ${editableAttr('al-footer1')}>${getText('al-footer1', 'USFQ PATH - Alumni')}</span></font></h5>
+                            <p style="margin: 0 0 8px 0; color: #9ca3af; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#9ca3af"><span ${editableAttr('al-footer2')}>${getText('al-footer2', 'Casa Tomate 202')}</span></font></p>
+                            <p style="margin: 0 0 24px 0; color: #9ca3af; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#9ca3af"><a ${editableAttr('al-footer3')} href="mailto:alumni@usfq.edu.ec" style="color: #9ca3af; text-decoration: none; font-weight: 500; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">${getText('al-footer3', 'alumni@usfq.edu.ec')}</a></font></p>
                             
-                            <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#6b7280"><span \${editableAttr('al-footer4')}>\${getText('al-footer4', 'Síguenos en nuestras redes sociales y mantente al tanto de todas nuestras noticias.')}</span></font></p>
+                            <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"><font color="#6b7280"><span ${editableAttr('al-footer4')}>${getText('al-footer4', 'Síguenos en nuestras redes sociales y mantente al tanto de todas nuestras noticias.')}</span></font></p>
                         </td>
                     </tr>
                 </table>
             </td>
         </tr>
     </table>
-    \${scriptTag}
+    ${scriptTag}
 </body>
 </html>`;
             };
