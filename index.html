@@ -61,11 +61,14 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen flex flex-col overflow-hidden">
     <div id="root" class="h-full flex flex-col"></div>
-
-    <script type="text/babel" data-presets="react,env">
-        /** @jsxRuntime classic */
-        /** @jsx React.createElement */
-        /** @jsxFrag React.Fragment */
+    <script>
+        Babel.registerPreset("react-classic", {
+            presets: [
+                [Babel.availablePresets["react"], { "runtime": "classic" }]
+            ]
+        });
+    </script>
+    <script type="text/babel" data-presets="react-classic,env">
         const { useState, useRef, useEffect } = React;
 
         const defaultHeroImage = 'https://via.placeholder.com/800x400.png?text=Hero+Image';
